@@ -1206,6 +1206,64 @@ body.auth-locked #auth-screen{display:flex;}
       <p style="font-size:.7rem;color:var(--txt3);margin-top:10px;">Os valores são persistidos na aba <code>configs</code> e passam a sobrescrever o fallback do arquivo <code>config.gs</code>.</p>
     </div>
 
+    <!-- ══ INTEGRAÇÃO GPT MAKER ══ -->
+    <div class="cfg-section" id="cfg-integracao-section" style="display:none">
+      <div class="cfg-section-title"><span class="cfg-title-icon">🤖</span> Integração GPT Maker — Credenciais</div>
+
+      <!-- API Token -->
+      <div style="margin-bottom:14px">
+        <span class="cfg-telegram-lbl" style="display:block;margin-bottom:4px">
+          API Token <small style="font-weight:400;color:var(--txt3)">(Bearer JWT — gerado no painel GPT Maker)</small>
+        </span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input class="cfg-input" id="cfg-gm-token" type="password"
+                 placeholder="eyJhbGci..." style="flex:1;font-family:monospace;font-size:.72rem;letter-spacing:.03em">
+          <button id="cfg-gm-vis-btn" onclick="toggleGMTokenVis()"
+                  style="padding:7px 11px;border-radius:6px;border:1px solid var(--bdr);background:var(--bg2);cursor:pointer;font-size:.85rem;flex-shrink:0"
+                  title="Mostrar / ocultar token">👁</button>
+        </div>
+        <span id="cfg-gm-token-src" style="font-size:.65rem;color:var(--txt3);margin-top:3px;display:block"></span>
+      </div>
+
+      <!-- Agent ID + Workspace ID -->
+      <div class="cfg-grid-2" style="margin-bottom:12px">
+        <div>
+          <span class="cfg-telegram-lbl" style="display:block;margin-bottom:4px">Agent ID</span>
+          <input class="cfg-input" id="cfg-gm-agent" type="text"
+                 placeholder="3F0F4036..." style="font-family:monospace;font-size:.74rem">
+          <span id="cfg-gm-agent-src" style="font-size:.65rem;color:var(--txt3);margin-top:2px;display:block"></span>
+        </div>
+        <div>
+          <span class="cfg-telegram-lbl" style="display:block;margin-bottom:4px">Workspace ID</span>
+          <input class="cfg-input" id="cfg-gm-workspace" type="text"
+                 placeholder="3F0F3767..." style="font-family:monospace;font-size:.74rem">
+          <span id="cfg-gm-workspace-src" style="font-size:.65rem;color:var(--txt3);margin-top:2px;display:block"></span>
+        </div>
+      </div>
+
+      <!-- Channel ID -->
+      <div style="margin-bottom:14px">
+        <span class="cfg-telegram-lbl" style="display:block;margin-bottom:4px">
+          Channel ID <small style="font-weight:400;color:var(--txt3)">(para follow-up / disparo ativo via WhatsApp)</small>
+        </span>
+        <input class="cfg-input" id="cfg-gm-channel" type="text"
+               placeholder="3F102654..." style="font-family:monospace;font-size:.74rem;max-width:360px">
+        <span id="cfg-gm-channel-src" style="font-size:.65rem;color:var(--txt3);margin-top:2px;display:block"></span>
+      </div>
+
+      <!-- Testar conexão -->
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+        <button onclick="testarConexaoGPTMaker()" class="cfg-save" style="margin-top:0;padding:8px 18px;background:var(--royal)">⚡ Testar Conexão</button>
+        <span id="cfg-gm-test-status" style="font-size:.78rem;color:var(--txt2)"></span>
+      </div>
+
+      <p style="font-size:.7rem;color:var(--txt3);line-height:1.5;border-top:1px solid var(--bdr);padding-top:10px;margin:0">
+        🔒 Valores salvos no <b>Script Properties</b> do Apps Script — invisíveis na planilha e para operadores.<br>
+        Se um campo estiver vazio ao salvar, o valor existente é <b>mantido</b>. Para remover um valor, escreva <code>CLEAR</code>.<br>
+        Os valores aqui configurados sobrescrevem qualquer fallback do <code>config.gs</code>.
+      </p>
+    </div>
+
     <!-- ══ FOLLOW-UP AUTOMÁTICO ══ -->
     <div class="cfg-section">
       <div class="cfg-section-title"><span class="cfg-title-icon">🔄</span> Follow-up Automático — Orçamento Enviado</div>
@@ -2281,7 +2339,7 @@ function goPage(id, btn) {
 
   // Carregamento lazy por página
   if (id === 'logs')    carregarLogs();
-  if (id === 'configs') { carregarConfigs(); carregarConfigFollowUp(); carregarConfigMonitoramento(); }
+  if (id === 'configs') { carregarConfigs(); carregarConfigFollowUp(); carregarConfigMonitoramento(); carregarConfigIntegracao(); }
   if (id === 'pdv')     carregarPDV();
 }
 
@@ -3688,7 +3746,7 @@ function salvarConfigs() {
   // Coleta todos os toggles
   var toggles = document.querySelectorAll('#cfg-notif-list input[type="checkbox"][data-chave]');
   var pushToggles = document.querySelectorAll('#cfg-push-list input[type="checkbox"][data-push-chave]');
-  var pendentes = toggles.length + 3;
+  var pendentes = toggles.length + 4; // +1 para integracao GPT Maker
   var erros = 0;
 
   var done = function() {
@@ -3747,6 +3805,85 @@ function salvarConfigs() {
       nome: document.getElementById('cfg-chat-nome').value,
       url: document.getElementById('cfg-chat-url').value,
     }, S.authToken);
+
+  // Salva integrações GPT Maker no Script Properties
+  google.script.run
+    .withSuccessHandler(function(){ done(); })
+    .withFailureHandler(function(e){ erros++; LOG.error('salvarIntegracaoConfig', 'Falha', e); done(); })
+    .salvarIntegracaoConfig({
+      gptmaker_api_key:      (document.getElementById('cfg-gm-token')     || {}).value || '',
+      gptmaker_agent_id:     (document.getElementById('cfg-gm-agent')     || {}).value || '',
+      gptmaker_workspace_id: (document.getElementById('cfg-gm-workspace') || {}).value || '',
+      gptmaker_channel_id:   (document.getElementById('cfg-gm-channel')   || {}).value || '',
+    }, S.authToken);
+}
+
+/* ════════════════════════════════════════════════════
+   INTEGRAÇÃO GPT MAKER — CONFIG UI
+   ════════════════════════════════════════════════════ */
+
+function carregarConfigIntegracao() {
+  if (!(S.user && S.user.role === 'admin')) return;
+  // Mostra a seção só para admins
+  var sec = document.getElementById('cfg-integracao-section');
+  if (sec) sec.style.display = '';
+
+  google.script.run
+    .withSuccessHandler(function(cfg) {
+      if (!cfg) return;
+
+      var srcLabel = function(src) {
+        return src === 'properties'
+          ? '<span style="color:var(--green)">✅ salvo em Script Properties</span>'
+          : '<span style="color:var(--yellow)">⚠️ vindo de config.gs (configure aqui para sobrescrever)</span>';
+      };
+
+      var el = function(id) { return document.getElementById(id); };
+      if (el('cfg-gm-token'))     el('cfg-gm-token').value     = cfg.gptmaker_api_key      || '';
+      if (el('cfg-gm-agent'))     el('cfg-gm-agent').value     = cfg.gptmaker_agent_id     || '';
+      if (el('cfg-gm-workspace')) el('cfg-gm-workspace').value = cfg.gptmaker_workspace_id || '';
+      if (el('cfg-gm-channel'))   el('cfg-gm-channel').value   = cfg.gptmaker_channel_id   || '';
+
+      if (el('cfg-gm-token-src'))     el('cfg-gm-token-src').innerHTML     = srcLabel(cfg.source_api_key);
+      if (el('cfg-gm-agent-src'))     el('cfg-gm-agent-src').innerHTML     = srcLabel(cfg.source_agent_id);
+      if (el('cfg-gm-workspace-src')) el('cfg-gm-workspace-src').innerHTML = srcLabel(cfg.source_workspace_id);
+      if (el('cfg-gm-channel-src'))   el('cfg-gm-channel-src').innerHTML   = srcLabel(cfg.source_channel_id);
+    })
+    .withFailureHandler(function(e) { LOG.warn('carregarConfigIntegracao', 'Falha: ' + e.message); })
+    .getIntegracaoConfig(S.authToken);
+}
+
+function toggleGMTokenVis() {
+  var inp = document.getElementById('cfg-gm-token');
+  var btn = document.getElementById('cfg-gm-vis-btn');
+  if (!inp) return;
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+  if (btn) btn.textContent = inp.type === 'password' ? '👁' : '🙈';
+}
+
+function testarConexaoGPTMaker() {
+  var status = document.getElementById('cfg-gm-test-status');
+  if (status) { status.style.color = 'var(--txt3)'; status.textContent = '⏳ Testando...'; }
+  google.script.run
+    .withSuccessHandler(function(r) {
+      if (!r) return;
+      var linhas = r.resultados
+        .filter(function(s) { return s.servico.indexOf('GPT Maker') > -1; })
+        .map(function(s) {
+          return s.ok
+            ? '✅ ' + s.servico + ': ' + (s.status || 'ok') + (s.agente_nome ? ' (' + s.agente_nome + ')' : '')
+            : '❌ ' + s.servico + ': ' + (s.erro || 'falha');
+        });
+      if (status) {
+        var allOk = linhas.every(function(l) { return l.startsWith('✅'); });
+        status.style.color = allOk ? 'var(--green)' : 'var(--red)';
+        status.innerHTML = linhas.join(' &nbsp;|&nbsp; ') || (r.ok ? '✅ OK' : '❌ Falha');
+      }
+    })
+    .withFailureHandler(function(e) {
+      if (status) { status.style.color = 'var(--red)'; status.textContent = '❌ Erro: ' + e.message; }
+    })
+    .verificarSaudeCompleta(S.authToken);
 }
 
 function renderUsersList(users) {

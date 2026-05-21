@@ -26,6 +26,32 @@
  */
 
 // ──────────────────────────────────────────────────────────────
+//  CONFIG GPT MAKER — leitura priorizada
+//  Ordem de prioridade (maior → menor):
+//    1. Script Properties (configurado pelo admin via frontend)
+//    2. CONFIG.GPTMAKER_* em config.gs (fallback / valores padrão)
+// ──────────────────────────────────────────────────────────────
+
+var _gptMakerCfgCache_ = null; // Cache para a execução atual (evita leituras repetidas)
+
+/**
+ * Retorna as credenciais GPT Maker resolvidas (Script Properties > config.gs).
+ * Cacheia o resultado para a duração da execução atual do script.
+ */
+function getGPTMakerConfig_() {
+  if (_gptMakerCfgCache_) return _gptMakerCfgCache_;
+  var props = PropertiesService.getScriptProperties();
+  _gptMakerCfgCache_ = {
+    apiKey:      (props.getProperty('gptmaker_api_key')      || CONFIG.GPTMAKER_API_KEY      || '').trim(),
+    agentId:     (props.getProperty('gptmaker_agent_id')     || CONFIG.GPTMAKER_AGENT_ID     || '').trim(),
+    workspaceId: (props.getProperty('gptmaker_workspace_id') || CONFIG.GPTMAKER_WORKSPACE_ID || '').trim(),
+    channelId:   (props.getProperty('gptmaker_channel_id')   || CONFIG.GPTMAKER_CHANNEL_ID   || '').trim(),
+    baseUrl:     CONFIG.GPTMAKER_BASE_URL,
+  };
+  return _gptMakerCfgCache_;
+}
+
+// ──────────────────────────────────────────────────────────────
 //  UTILITÁRIO HTTP — GPT Maker v2
 // ──────────────────────────────────────────────────────────────
 
@@ -38,12 +64,13 @@
  * @returns {Object}   Resposta parseada como JSON
  */
 function chamarGPTMaker(metodo, endpoint, corpo) {
-  var url    = CONFIG.GPTMAKER_BASE_URL + endpoint;
+  var _gm  = getGPTMakerConfig_();
+  var url  = _gm.baseUrl + endpoint;
   var methodUpper = String(metodo || 'GET').toUpperCase();
   var opcoes = {
     method:             methodUpper.toLowerCase(),
     headers:            {
-      'Authorization': CONFIG.GPTMAKER_API_KEY,
+      'Authorization': _gm.apiKey,
       'Accept': 'application/json',
     },
     muteHttpExceptions: true,
@@ -106,10 +133,10 @@ function chamarGPTMaker(metodo, endpoint, corpo) {
  */
 function gptMakerBuscarChats(limite) {
   // ⚠️  ENDPOINT v2: /workspace (singular) — não /workspaces (plural)
-  var endpoint = '/workspace/' + CONFIG.GPTMAKER_WORKSPACE_ID
+  var endpoint = '/workspace/' + getGPTMakerConfig_().workspaceId
                + '/chats?limit=' + (limite || CONFIG.MAX_CONVERSAS_DEVOLVER);
 
-  Logger.log('[GPTMAKER] Buscando chats do workspace ' + CONFIG.GPTMAKER_WORKSPACE_ID);
+  Logger.log('[GPTMAKER] Buscando chats do workspace ' + getGPTMakerConfig_().workspaceId);
 
   var resp = chamarGPTMaker('GET', endpoint, null);
 
@@ -195,7 +222,7 @@ function gptMakerBuscarTodosChats(maxTotal) {
 
   while (todos.length < maxTotal && pagina <= MAX_PAGINAS && (Date.now() - inicio) < MAX_MS) {
     // Tenta page + offset para compatibilidade máxima com a API
-    var endpoint = '/workspace/' + CONFIG.GPTMAKER_WORKSPACE_ID
+    var endpoint = '/workspace/' + getGPTMakerConfig_().workspaceId
                  + '/chats?limit=' + PAGE_SIZE
                  + '&page=' + pagina
                  + '&offset=' + offset;
@@ -315,8 +342,8 @@ function getTelegramConfig_() {
  * Chamado ao desativar autopreservação.
  */
 function gptMakerAtivarAgente() {
-  Logger.log('[GPTMAKER] Ativando agente ' + CONFIG.GPTMAKER_AGENT_ID);
-  return chamarGPTMaker('PUT', '/agent/' + CONFIG.GPTMAKER_AGENT_ID + '/active', null);
+  Logger.log('[GPTMAKER] Ativando agente ' + getGPTMakerConfig_().agentId);
+  return chamarGPTMaker('PUT', '/agent/' + getGPTMakerConfig_().agentId + '/active', null);
 }
 
 /**
@@ -324,8 +351,8 @@ function gptMakerAtivarAgente() {
  * Chamado ao ativar autopreservação.
  */
 function gptMakerInativarAgente() {
-  Logger.log('[GPTMAKER] Inativando agente ' + CONFIG.GPTMAKER_AGENT_ID);
-  return chamarGPTMaker('PUT', '/agent/' + CONFIG.GPTMAKER_AGENT_ID + '/inactive', null);
+  Logger.log('[GPTMAKER] Inativando agente ' + getGPTMakerConfig_().agentId);
+  return chamarGPTMaker('PUT', '/agent/' + getGPTMakerConfig_().agentId + '/inactive', null);
 }
 
 /**
@@ -334,8 +361,8 @@ function gptMakerInativarAgente() {
  * GET /agent/{agentId}
  */
 function gptMakerGetAgente() {
-  Logger.log('[GPTMAKER] Buscando dados do agente ' + CONFIG.GPTMAKER_AGENT_ID);
-  return chamarGPTMaker('GET', '/agent/' + CONFIG.GPTMAKER_AGENT_ID, null);
+  Logger.log('[GPTMAKER] Buscando dados do agente ' + getGPTMakerConfig_().agentId);
+  return chamarGPTMaker('GET', '/agent/' + getGPTMakerConfig_().agentId, null);
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -353,10 +380,10 @@ function gptMakerGetAgente() {
  * @returns {Object} { success: true }
  */
 function gptMakerCriarTreinamento(texto, callbackUrl) {
-  Logger.log('[GPTMAKER] Criando treinamento → agente: ' + CONFIG.GPTMAKER_AGENT_ID);
+  Logger.log('[GPTMAKER] Criando treinamento → agente: ' + getGPTMakerConfig_().agentId);
   var body = { type: 'TEXT', text: String(texto) };
   if (callbackUrl) body.callbackUrl = callbackUrl;
-  return chamarGPTMaker('POST', '/agent/' + CONFIG.GPTMAKER_AGENT_ID + '/trainings', body);
+  return chamarGPTMaker('POST', '/agent/' + getGPTMakerConfig_().agentId + '/trainings', body);
 }
 
 /**
@@ -370,7 +397,7 @@ function gptMakerBuscarTreinamentos(query, pageSize) {
   var qs = '?type=TEXT&pageSize=' + (pageSize || 20);
   if (query) qs += '&query=' + encodeURIComponent(String(query));
   Logger.log('[GPTMAKER] Buscando treinamentos → query: ' + (query || '(all)'));
-  var resp = chamarGPTMaker('GET', '/agent/' + CONFIG.GPTMAKER_AGENT_ID + '/trainings' + qs, null);
+  var resp = chamarGPTMaker('GET', '/agent/' + getGPTMakerConfig_().agentId + '/trainings' + qs, null);
   if (Array.isArray(resp))               return resp;
   if (resp && Array.isArray(resp.data))  return resp.data;
   if (resp && Array.isArray(resp.items)) return resp.items;
@@ -416,8 +443,8 @@ function gptMakerRemoverTreinamento(trainingId) {
  * Retorna as configurações atuais do agente (modelo LLM, emojis, limites, etc.).
  */
 function gptMakerGetConfiguracoes() {
-  Logger.log('[GPTMAKER] Buscando configurações do agente ' + CONFIG.GPTMAKER_AGENT_ID);
-  return chamarGPTMaker('GET', '/agent/' + CONFIG.GPTMAKER_AGENT_ID + '/settings', null);
+  Logger.log('[GPTMAKER] Buscando configurações do agente ' + getGPTMakerConfig_().agentId);
+  return chamarGPTMaker('GET', '/agent/' + getGPTMakerConfig_().agentId + '/settings', null);
 }
 
 /**
@@ -426,8 +453,8 @@ function gptMakerGetConfiguracoes() {
  * @param {Object} config - Ex: { prefferModel: 'GPT_4_O', enabledEmoji: false }
  */
 function gptMakerAtualizarConfiguracoes(config) {
-  Logger.log('[GPTMAKER] Atualizando configurações do agente ' + CONFIG.GPTMAKER_AGENT_ID);
-  return chamarGPTMaker('PUT', '/agent/' + CONFIG.GPTMAKER_AGENT_ID + '/settings', config);
+  Logger.log('[GPTMAKER] Atualizando configurações do agente ' + getGPTMakerConfig_().agentId);
+  return chamarGPTMaker('PUT', '/agent/' + getGPTMakerConfig_().agentId + '/settings', config);
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -441,8 +468,8 @@ function gptMakerAtualizarConfiguracoes(config) {
  * Eventos: onNewMessage, onTransfer, onFirstInteraction, onFinishInteraction, etc.
  */
 function gptMakerGetWebhooks() {
-  Logger.log('[GPTMAKER] Buscando webhooks do agente ' + CONFIG.GPTMAKER_AGENT_ID);
-  return chamarGPTMaker('GET', '/agent/' + CONFIG.GPTMAKER_AGENT_ID + '/webhooks', null);
+  Logger.log('[GPTMAKER] Buscando webhooks do agente ' + getGPTMakerConfig_().agentId);
+  return chamarGPTMaker('GET', '/agent/' + getGPTMakerConfig_().agentId + '/webhooks', null);
 }
 
 /**
@@ -450,8 +477,8 @@ function gptMakerGetWebhooks() {
  * @param {Object} webhooks - Ex: { onNewMessage: 'https://...', onTransfer: 'https://...' }
  */
 function gptMakerAtualizarWebhooks(webhooks) {
-  Logger.log('[GPTMAKER] Atualizando webhooks do agente ' + CONFIG.GPTMAKER_AGENT_ID);
-  return chamarGPTMaker('PUT', '/agent/' + CONFIG.GPTMAKER_AGENT_ID + '/webhooks', webhooks);
+  Logger.log('[GPTMAKER] Atualizando webhooks do agente ' + getGPTMakerConfig_().agentId);
+  return chamarGPTMaker('PUT', '/agent/' + getGPTMakerConfig_().agentId + '/webhooks', webhooks);
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -470,7 +497,7 @@ function gptMakerAtualizarWebhooks(webhooks) {
  */
 function gptMakerAdicionarContexto(contextId, prompt, role) {
   Logger.log('[GPTMAKER] Adicionando contexto → contextId: ' + contextId + ' | role: ' + (role || 'assistant'));
-  return chamarGPTMaker('POST', '/agent/' + CONFIG.GPTMAKER_AGENT_ID + '/add-message', {
+  return chamarGPTMaker('POST', '/agent/' + getGPTMakerConfig_().agentId + '/add-message', {
     contextId: String(contextId),
     prompt:    String(prompt),
     role:      role || 'assistant',
@@ -490,7 +517,7 @@ function gptMakerAdicionarContexto(contextId, prompt, role) {
  */
 function gptMakerIniciarConversa(phone, message) {
   Logger.log('[GPTMAKER] Iniciando conversa ativa → phone: ' + phone);
-  return chamarGPTMaker('POST', '/channel/' + CONFIG.GPTMAKER_CHANNEL_ID + '/start-conversation', {
+  return chamarGPTMaker('POST', '/channel/' + getGPTMakerConfig_().channelId + '/start-conversation', {
     phone:   String(phone),
     message: String(message),
   });
@@ -521,10 +548,11 @@ function verificarSaudeCompleta(authToken) {
 
   // ── 2. GPT Maker — status do agente ──────────────────────
   try {
-    if (!CONFIG.GPTMAKER_AGENT_ID || CONFIG.GPTMAKER_AGENT_ID.indexOf('YOUR_') > -1) {
-      res.push({ servico: 'GPT Maker IA', ok: false, erro: 'GPTMAKER_AGENT_ID não configurado em config.gs' });
-    } else if (!CONFIG.GPTMAKER_API_KEY || CONFIG.GPTMAKER_API_KEY.indexOf('YOUR_') > -1) {
-      res.push({ servico: 'GPT Maker IA', ok: false, erro: 'GPTMAKER_API_KEY não configurado em config.gs' });
+    var _gmChk = getGPTMakerConfig_();
+    if (!_gmChk.agentId || _gmChk.agentId.indexOf('YOUR_') > -1) {
+      res.push({ servico: 'GPT Maker IA', ok: false, erro: 'Agent ID não configurado — acesse Configurações → Integração GPT Maker.' });
+    } else if (!_gmChk.apiKey || _gmChk.apiKey.indexOf('YOUR_') > -1) {
+      res.push({ servico: 'GPT Maker IA', ok: false, erro: 'API Token não configurado — acesse Configurações → Integração GPT Maker.' });
     } else {
       var agente = gptMakerGetAgente();
       var ativo  = agente && String(agente.status || '').toUpperCase() !== 'INACTIVE';
@@ -542,8 +570,8 @@ function verificarSaudeCompleta(authToken) {
 
   // ── 3. GPT Maker — treinamentos ──────────────────────────
   try {
-    if (!CONFIG.GPTMAKER_AGENT_ID || CONFIG.GPTMAKER_AGENT_ID.indexOf('YOUR_') > -1) {
-      res.push({ servico: 'GPT Maker Treinamentos', ok: false, erro: 'AGENT_ID não configurado' });
+    if (!getGPTMakerConfig_().agentId || getGPTMakerConfig_().agentId.indexOf('YOUR_') > -1) {
+      res.push({ servico: 'GPT Maker Treinamentos', ok: false, erro: 'Agent ID não configurado' });
     } else {
       var treins = gptMakerBuscarTreinamentos('', 5);
       res.push({ servico: 'GPT Maker Treinamentos', ok: true, status: (Array.isArray(treins) ? treins.length : 0) + ' treinamentos encontrados' });
@@ -586,4 +614,70 @@ function verificarSaudeCompleta(authToken) {
   var tudo_ok = res.every(function(r){ return r.ok; });
   Logger.log('[HEALTH] ' + (tudo_ok ? '✅ Tudo ok.' : '⚠️ Problemas encontrados.') + ' ' + JSON.stringify(res));
   return { ok: tudo_ok, resultados: res };
+}
+
+// ──────────────────────────────────────────────────────────────
+//  CONFIGURAÇÃO DE INTEGRAÇÕES (frontend ↔ Script Properties)
+//  Permite ao admin gerenciar credenciais pelo painel sem tocar
+//  em config.gs ou fazer redeploy.
+// ──────────────────────────────────────────────────────────────
+
+/**
+ * Retorna as configurações atuais de integração para o painel admin.
+ * Token JWT é retornado completo pois só admins têm acesso e
+ * o valor está no Script Properties (não na planilha).
+ */
+function getIntegracaoConfig(authToken) {
+  requireAuth(authToken, 'admin');
+  var gm = getGPTMakerConfig_();
+  return {
+    gptmaker_api_key:      gm.apiKey,
+    gptmaker_agent_id:     gm.agentId,
+    gptmaker_workspace_id: gm.workspaceId,
+    gptmaker_channel_id:   gm.channelId,
+    // Flag informativa: onde estão os valores (Properties ou config.gs)
+    source_api_key:      PropertiesService.getScriptProperties().getProperty('gptmaker_api_key')      ? 'properties' : 'config.gs',
+    source_agent_id:     PropertiesService.getScriptProperties().getProperty('gptmaker_agent_id')     ? 'properties' : 'config.gs',
+    source_workspace_id: PropertiesService.getScriptProperties().getProperty('gptmaker_workspace_id') ? 'properties' : 'config.gs',
+    source_channel_id:   PropertiesService.getScriptProperties().getProperty('gptmaker_channel_id')   ? 'properties' : 'config.gs',
+  };
+}
+
+/**
+ * Salva as configurações de integração no Script Properties do Apps Script.
+ * Campos vazios são ignorados (mantém o valor existente).
+ * Para limpar um valor, passe explicitamente a string 'CLEAR'.
+ */
+function salvarIntegracaoConfig(dados, authToken) {
+  var sessao = requireAuth(authToken, 'admin');
+  var props  = PropertiesService.getScriptProperties();
+
+  var mapa = {
+    gptmaker_api_key:      dados.gptmaker_api_key,
+    gptmaker_agent_id:     dados.gptmaker_agent_id,
+    gptmaker_workspace_id: dados.gptmaker_workspace_id,
+    gptmaker_channel_id:   dados.gptmaker_channel_id,
+  };
+
+  Object.keys(mapa).forEach(function(chave) {
+    var val = mapa[chave];
+    if (val === undefined || val === null) return; // ignora campos não enviados
+    if (String(val).trim() === '') return;          // ignora campos vazios (não apaga)
+    if (String(val).toUpperCase() === 'CLEAR') {
+      props.deleteProperty(chave);                  // 'CLEAR' remove a chave
+      Logger.log('[INTEG] Propriedade removida: ' + chave);
+    } else {
+      props.setProperty(chave, String(val).trim());
+      Logger.log('[INTEG] Propriedade salva: ' + chave + ' (' + String(val).substring(0, 12) + '...)');
+    }
+  });
+
+  // Invalida cache para que a próxima chamada recarregue os novos valores
+  _gptMakerCfgCache_ = null;
+
+  registrarLog('config_integracao', 'ok', {
+    campos_atualizados: Object.keys(mapa).filter(function(k) { return mapa[k] && mapa[k] !== ''; }),
+  }, '', { usuario: sessao.email, acao: 'salvar_integracao' });
+
+  return { ok: true };
 }
