@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login | Milvolts CRM</title>
+  <link rel="manifest" href="?page=manifest">
+  <meta name="theme-color" content="#1d4ed8">
+  <style>
+    :root{
+      --bg:#091224;
+      --panel:#ffffff;
+      --panel-soft:rgba(255,255,255,.78);
+      --line:rgba(148,163,184,.28);
+      --txt:#0f172a;
+      --muted:#64748b;
+      --brand:#1d4ed8;
+      --brand-2:#2563eb;
+      --brand-3:#0f3d99;
+      --ok:#0f9f6e;
+      --warn:#d97706;
+      --err:#dc2626;
+      --shadow:0 24px 80px rgba(2,6,23,.28);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%}
+    body{
+      font-family:Arial,Helvetica,sans-serif;
+      color:var(--txt);
+      background:var(--bg);
+      overflow-x:hidden;
+    }
+    .login-shell{
+      position:relative;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:32px 16px;
+      isolation:isolate;
+    }
+    .login-bg,
+    .login-bg::before,
+    .login-bg::after{
+      position:absolute;
+      inset:0;
+      content:"";
+      z-index:-3;
+    }
+    .login-bg{
+      background:
+        radial-gradient(circle at 15% 20%, rgba(37,99,235,.34), transparent 38%),
+        radial-gradient(circle at 85% 18%, rgba(14,165,233,.22), transparent 30%),
+        linear-gradient(135deg, rgba(9,18,36,.94), rgba(7,14,28,.72));
+      overflow:hidden;
+    }
+    .login-bg::before{
+      z-index:-2;
+      background-image:
+        linear-gradient(rgba(9,18,36,.48), rgba(9,18,36,.6)),
+        url('https://i.imgur.com/KxqNiaT.jpeg'),
+        url('https://i.imgur.com/cX4uD1g.jpeg');
+      background-size:cover, cover, cover;
+      background-position:center center, center center, center center;
+      filter:blur(2px) saturate(1.05);
+      transform:scale(1.06);
+      opacity:.92;
+    }
+    .login-bg::after{
+      z-index:-1;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.1), rgba(255,255,255,0) 28%),
+        linear-gradient(135deg, rgba(12,22,44,.1), rgba(12,22,44,.72));
+      backdrop-filter:blur(10px);
+    }
+    .login-card{
+      width:min(1080px, 100%);
+      display:grid;
+      grid-template-columns:minmax(320px, 420px) minmax(320px, 1fr);
+      border:1px solid rgba(191,219,254,.22);
+      border-radius:32px;
+      overflow:hidden;
+      background:rgba(255,255,255,.14);
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(16px);
+      animation:cardIn 1.2s ease both;
+    }
+    .login-brand{
+      position:relative;
+      padding:42px 34px 36px;
+      color:#eff6ff;
+      background:
+        linear-gradient(155deg, rgba(8,15,32,.8), rgba(18,63,154,.78)),
+        linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      border-right:1px solid rgba(191,219,254,.16);
+    }
+    .brand-top{
+      display:flex;
+      align-items:center;
+      gap:16px;
+      margin-bottom:24px;
+    }
+    .brand-logo{
+      width:74px;
+      height:74px;
+      border-radius:22px;
+      background:rgba(255,255,255,.16);
+      border:1px solid rgba(255,255,255,.18);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.2);
+      overflow:hidden;
+    }
+    .brand-logo img{width:82%;height:auto;display:block}
+    .brand-kicker{
+      display:inline-flex;
+      align-items:center;
+      padding:7px 12px;
+      border-radius:999px;
+      background:rgba(255,255,255,.1);
+      color:#dbeafe;
+      font-size:12px;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      margin-bottom:16px;
+    }
+    .brand-title{
+      margin:0 0 10px;
+      font-size:34px;
+      line-height:1.04;
+      font-weight:800;
+      max-width:320px;
+    }
+    .brand-copy{
+      margin:0 0 22px;
+      font-size:15px;
+      line-height:1.75;
+      color:rgba(239,246,255,.82);
+      max-width:340px;
+    }
+    .brand-points{
+      display:grid;
+      gap:14px;
+      margin:30px 0 0;
+    }
+    .brand-point{
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+      color:#dbeafe;
+      font-size:14px;
+      line-height:1.55;
+    }
+    .point-mark{
+      width:30px;
+      height:30px;
+      flex:0 0 30px;
+      border-radius:10px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:rgba(255,255,255,.1);
+      border:1px solid rgba(255,255,255,.16);
+    }
+    .login-panel{
+      padding:42px 38px 36px;
+      background:linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.82));
+    }
+    .panel-head{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:18px;
+      margin-bottom:28px;
+    }
+    .panel-title{
+      margin:0 0 8px;
+      font-size:30px;
+      line-height:1.08;
+      font-weight:800;
+      color:#0b1733;
+    }
+    .panel-sub{
+      margin:0;
+      font-size:14px;
+      line-height:1.7;
+      color:var(--muted);
+      max-width:420px;
+    }
+    .panel-badge{
+      display:inline-flex;
+      align-items:center;
+      padding:8px 12px;
+      border-radius:999px;
+      background:#eff6ff;
+      border:1px solid #bfdbfe;
+      color:#1d4ed8;
+      font-size:12px;
+      font-weight:700;
+      white-space:nowrap;
+    }
+    .panel-card{
+      background:var(--panel-soft);
+      border:1px solid var(--line);
+      border-radius:24px;
+      padding:24px;
+      box-shadow:0 8px 30px rgba(15,23,42,.05);
+    }
+    .auth-header{
+      margin-bottom:18px;
+    }
+    .auth-title{
+      margin:0 0 8px;
+      font-size:24px;
+      line-height:1.1;
+      font-weight:800;
+      color:#0f172a;
+    }
+    .auth-description{
+      margin:0;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.7;
+    }
+    .auth-form{
+      display:grid;
+      gap:14px;
+    }
+    .auth-grid{
+      display:grid;
+      gap:14px;
+      grid-template-columns:repeat(2, minmax(0, 1fr));
+    }
+    .field{
+      display:grid;
+      gap:8px;
+    }
+    .field.full{grid-column:1 / -1}
+    .field label{
+      font-size:12px;
+      font-weight:700;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color:#475569;
+    }
+    .field input{
+      width:100%;
+      border:1px solid #cbd5e1;
+      border-radius:16px;
+      padding:14px 15px;
+      font-size:15px;
+      outline:none;
+      color:#0f172a;
+      background:rgba(255,255,255,.88);
+      transition:border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+    }
+    .field input:focus{
+      border-color:#60a5fa;
+      box-shadow:0 0 0 4px rgba(96,165,250,.14);
+      transform:translateY(-1px);
+    }
+    .field input[disabled]{
+      color:#475569;
+      background:#f8fafc;
+    }
+    .auth-actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      margin-top:8px;
+    }
+    .btn{
+      appearance:none;
+      border:none;
+      border-radius:16px;
+      padding:14px 18px;
+      min-height:50px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      font-size:15px;
+      font-weight:700;
+      cursor:pointer;
+      transition:transform .18s ease, box-shadow .18s ease, opacity .18s ease, background .18s ease;
+    }
+    .btn:hover:not(:disabled){
+      transform:translateY(-1px);
+      box-shadow:0 12px 24px rgba(37,99,235,.16);
+    }
+    .btn:disabled{
+      cursor:wait;
+      opacity:.78;
+      box-shadow:none;
+    }
+    .btn-primary{
+      color:#fff;
+      background:linear-gradient(135deg, var(--brand), var(--brand-2));
+    }
+    .btn-secondary{
+      color:#1d4ed8;
+      background:#eff6ff;
+      border:1px solid #bfdbfe;
+    }
+    .btn-link{
+      padding:0;
+      min-height:auto;
+      background:none;
+      color:#1d4ed8;
+      border:none;
+      box-shadow:none;
+      font-size:14px;
+    }
+    .btn-link:hover:not(:disabled){
+      transform:none;
+      box-shadow:none;
+      opacity:.84;
+    }
+    .spinner{
+      width:16px;
+      height:16px;
+      border-radius:999px;
+      border:2px solid currentColor;
+      border-right-color:transparent;
+      display:inline-block;
+      animation:spin .7s linear infinite;
+    }
+    .feedback{
+      min-height:22px;
+      margin-top:16px;
+      font-size:14px;
+      line-height:1.55;
+      color:var(--muted);
+    }
+    .feedback.ok{color:var(--ok)}
+    .feedback.warn{color:var(--warn)}
+    .feedback.err{color:var(--err)}
+    .foot-note{
+      margin-top:18px;
+      font-size:12px;
+      color:#64748b;
+      line-height:1.65;
+    }
+    .install-prompt{
+      position:fixed;right:18px;bottom:18px;z-index:20;width:min(360px,calc(100vw - 24px));display:none;
+      background:rgba(255,255,255,.94);border:1px solid rgba(191,219,254,.4);border-radius:18px;box-shadow:var(--shadow);padding:16px;
+      backdrop-filter:blur(14px);
+    }
+    .install-prompt.show{display:block;animation:cardIn .35s ease both}
+    .install-title{font-size:15px;font-weight:800;color:#0b1733;margin-bottom:6px}
+    .install-copy{font-size:13px;line-height:1.6;color:var(--muted);margin-bottom:12px}
+    .install-actions{display:flex;gap:8px;flex-wrap:wrap}
+    .install-note{font-size:12px;color:var(--muted);line-height:1.55;margin-top:10px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @keyframes cardIn{
+      from{opacity:0;transform:translateY(24px) scale(.985)}
+      to{opacity:1;transform:translateY(0) scale(1)}
+    }
+    @media (max-width: 920px){
+      .login-card{grid-template-columns:1fr}
+      .login-brand{border-right:none;border-bottom:1px solid rgba(191,219,254,.16)}
+      .panel-head{flex-direction:column}
+    }
+    @media (max-width: 640px){
+      .login-shell{padding:18px 12px}
+      .login-brand,.login-panel{padding:28px 20px}
+      .panel-card{padding:18px}
+      .brand-title{font-size:28px}
+      .panel-title{font-size:24px}
+      .auth-grid{grid-template-columns:1fr}
+      .auth-actions{flex-direction:column;align-items:stretch}
+      .btn{width:100%}
+      .btn-link{width:auto;justify-content:flex-start}
+    }
+  </style>
+</head>
+<body>
+  <div class="login-shell">
+    <div class="login-bg"></div>
+    <div class="login-card">
+      <section class="login-brand">
+        <div class="brand-top">
+          <div class="brand-logo">
+            <img src="https://i.imgur.com/05Bbsy8.png" alt="Milvolts">
+          </div>
+          <div>
+            <div class="brand-kicker">Milvolts CRM</div>
+            <div style="font-size:13px;color:rgba(239,246,255,.78);line-height:1.6;">Acesso seguro ao dashboard operacional</div>
+          </div>
+        </div>
+        <h1 class="brand-title">Operação centralizada, acesso confiável.</h1>
+        <p class="brand-copy">Entre no ambiente do CRM com autenticação estável, recuperação por código e sessão preparada para uso real de produção.</p>
+        <div class="brand-points">
+          <div class="brand-point">
+            <div class="point-mark">1</div>
+            <div>Login com validação consistente da aba <strong>Users</strong>, respeitando e-mail normalizado e senha migrada com segurança.</div>
+          </div>
+          <div class="brand-point">
+            <div class="point-mark">2</div>
+            <div>Recuperação por código de 6 dígitos, expiração de 5 minutos e redefinição sem link quebrado.</div>
+          </div>
+          <div class="brand-point">
+            <div class="point-mark">3</div>
+            <div>Feedback visual de carregamento em todas as ações principais para evitar cliques duplicados e incerteza.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="login-panel">
+        <div class="panel-head">
+          <div>
+            <h2 class="panel-title">Acesso Milvolts</h2>
+            <p class="panel-sub">Faça login, aceite um convite ou recupere a senha pelo mesmo fluxo. O dashboard fica isolado desta tela para manter a navegação mais estável.</p>
+          </div>
+          <div class="panel-badge" id="panel-badge">Ambiente seguro</div>
+        </div>
+        <div class="panel-card" id="auth-root"></div>
+      </section>
+    </div>
+  </div>
+
+  <div class="install-prompt" id="install-prompt">
+    <div class="install-title">Instalar Milvolts CRM</div>
+    <div class="install-copy">Instale o CRM como aplicativo para abrir mais rápido e usar em modo dedicado no computador.</div>
+    <div class="install-actions">
+      <button class="btn btn-primary" type="button" onclick="acionarInstalacaoApp()">Instalar agora</button>
+      <button class="btn btn-secondary" type="button" onclick="dispensarPromptInstalacao(false)">Agora não</button>
+      <button class="btn btn-secondary" type="button" onclick="dispensarPromptInstalacao(true)">Não mostrar novamente</button>
+    </div>
+    <div class="install-note" id="install-note">Se o navegador não liberar a instalação automática, use o menu do navegador para instalar o app manualmente.</div>
+  </div>
+
+  <script>
+    var AUTH_STATE = {
+      authToken: '',
+      recovery: { email: '', accessToken: '' },
+      bootstrap: null,
+    };
+    var PWA_STATE = { installed: false };
+    var pwaPromptEvent = null;
+
+    var UI = {
+      feedbackType: '',
+      feedbackText: '',
+    };
+
+    function logInfo(step, extra) {
+      console.info('[login]', step, extra || '');
+    }
+
+    function esc(value) {
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function getQueryParam(name) {
+      return new URLSearchParams(window.location.search).get(name) || '';
+    }
+
+    function buildPageUrl(page, extra) {
+      var url = new URL(window.location.href);
+      url.search = '';
+      url.searchParams.set('page', page || 'login');
+      Object.keys(extra || {}).forEach(function(key) {
+        if (extra[key] !== undefined && extra[key] !== null && extra[key] !== '') {
+          url.searchParams.set(key, extra[key]);
+        }
+      });
+      return url.toString();
+    }
+
+    function getStoredToken() {
+      try { return localStorage.getItem('milvolts_auth_token') || ''; }
+      catch (_) { return ''; }
+    }
+
+    function getStoredAppUrl() {
+      try { return localStorage.getItem('milvolts_app_url') || ''; }
+      catch (_) { return ''; }
+    }
+
+    function getStoredLoginUrl() {
+      try { return localStorage.getItem('milvolts_login_url') || ''; }
+      catch (_) { return ''; }
+    }
+
+    function storeCanonicalUrls(info) {
+      try {
+        if (info && info.appUrl) localStorage.setItem('milvolts_app_url', info.appUrl);
+        if (info && info.loginUrl) localStorage.setItem('milvolts_login_url', info.loginUrl);
+      } catch (_) {}
+    }
+
+    function getCanonicalAppUrl() {
+      return (AUTH_STATE.bootstrap && AUTH_STATE.bootstrap.appUrl) || getStoredAppUrl() || buildPageUrl('app');
+    }
+
+    function getCanonicalLoginUrl() {
+      return (AUTH_STATE.bootstrap && AUTH_STATE.bootstrap.loginUrl) || getStoredLoginUrl() || buildPageUrl('login');
+    }
+
+    function storeToken(token) {
+      AUTH_STATE.authToken = token || '';
+      try {
+        if (token) localStorage.setItem('milvolts_auth_token', token);
+        else localStorage.removeItem('milvolts_auth_token');
+      } catch (_) {}
+    }
+
+    function persistFeedback(message, type) {
+      try {
+        sessionStorage.setItem('milvolts_auth_feedback', JSON.stringify({
+          message: message || '',
+          type: type || '',
+        }));
+      } catch (_) {}
+    }
+
+    function consumeFeedback() {
+      try {
+        var raw = sessionStorage.getItem('milvolts_auth_feedback');
+        if (!raw) return null;
+        sessionStorage.removeItem('milvolts_auth_feedback');
+        return JSON.parse(raw);
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function setPanelBadge(text) {
+      var el = document.getElementById('panel-badge');
+      if (el) el.textContent = text;
+    }
+
+    function setupPwaSupport() {
+      PWA_STATE.installed = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('?page=sw').catch(function(err) {
+          logInfo('sw_error', err && err.message);
+        });
+      }
+      window.addEventListener('beforeinstallprompt', function(event) {
+        event.preventDefault();
+        pwaPromptEvent = event;
+        atualizarStatusPwa();
+        maybeShowInstallPrompt();
+      });
+      window.addEventListener('appinstalled', function() {
+        PWA_STATE.installed = true;
+        pwaPromptEvent = null;
+        try { localStorage.setItem('milvolts_pwa_prompt_hidden', 'true'); } catch (_) {}
+        hideInstallPrompt();
+        atualizarStatusPwa();
+      });
+    }
+
+    function maybeShowInstallPrompt() {
+      if (PWA_STATE.installed) return;
+      try {
+        if (localStorage.getItem('milvolts_pwa_prompt_hidden') === 'true') return;
+      } catch (_) {}
+      var el = document.getElementById('install-prompt');
+      if (el) el.classList.add('show');
+      atualizarStatusPwa();
+    }
+
+    function hideInstallPrompt() {
+      var el = document.getElementById('install-prompt');
+      if (el) el.classList.remove('show');
+    }
+
+    function dispensarPromptInstalacao(noShowAgain) {
+      if (noShowAgain) {
+        try { localStorage.setItem('milvolts_pwa_prompt_hidden', 'true'); } catch (_) {}
+      }
+      hideInstallPrompt();
+      atualizarStatusPwa();
+    }
+
+    function acionarInstalacaoApp() {
+      if (!pwaPromptEvent) {
+        alert('Use o menu do navegador para instalar o Milvolts CRM como aplicativo neste dispositivo.');
+        return;
+      }
+      pwaPromptEvent.prompt();
+      pwaPromptEvent.userChoice.then(function(choice) {
+        logInfo('install_choice', choice && choice.outcome);
+        atualizarStatusPwa();
+      });
+    }
+
+    function atualizarStatusPwa() {
+      var note = document.getElementById('install-note');
+      if (!note) return;
+      if (PWA_STATE.installed) {
+        note.textContent = 'O Milvolts CRM já está instalado neste dispositivo.';
+        hideInstallPrompt();
+        return;
+      }
+      note.textContent = pwaPromptEvent
+        ? 'A instalação automática está disponível neste navegador.'
+        : 'Se a instalação automática não aparecer, use o menu do navegador para instalar o app manualmente.';
+    }
+
+    function writeAuthHandoff(token, user) {
+      try {
+        window.name = JSON.stringify({
+          milvoltsAuthToken: token || '',
+          milvoltsAuthUser: user || null,
+          milvoltsAuthAt: Date.now(),
+        });
+      } catch (_) {}
+    }
+
+    function renderFrame(title, description, contentHtml, feedbackType, feedbackText) {
+      var root = document.getElementById('auth-root');
+      if (!root) return;
+      root.innerHTML =
+        '<div class="auth-header">' +
+          '<h3 class="auth-title">' + esc(title) + '</h3>' +
+          '<p class="auth-description">' + esc(description) + '</p>' +
+        '</div>' +
+        contentHtml +
+        '<div class="feedback ' + esc(feedbackType || '') + '" id="auth-feedback">' + esc(feedbackText || '') + '</div>' +
+        '<div class="foot-note">Milvolts CRM usa sessoes com expiração e audita tentativas de acesso no backend.</div>';
+    }
+
+    function setButtonLoading(buttonId, loading, loadingText) {
+      var btn = document.getElementById(buttonId);
+      if (!btn) return;
+      if (!btn.dataset.label) btn.dataset.label = btn.innerHTML;
+      btn.disabled = !!loading;
+      btn.innerHTML = loading
+        ? '<span class="spinner"></span><span>' + esc(loadingText || 'Processando...') + '</span>'
+        : btn.dataset.label;
+    }
+
+    function finalizeLogin(user, token) {
+      logInfo('login_ok', user && user.email);
+      storeToken(token || '');
+      writeAuthHandoff(token, user);
+      setPanelBadge('Abrindo dashboard');
+      renderFrame(
+        'Acesso liberado',
+        'Sessao validada com sucesso. Estamos abrindo o CRM e preparando os dados iniciais.',
+        '<div class="auth-actions"><button class="btn btn-primary" type="button" disabled><span class="spinner"></span><span>Entrando no dashboard...</span></button></div>',
+        'ok',
+        'Sessao iniciada para ' + ((user && (user.nome || user.email)) || 'usuario') + '.'
+      );
+      persistFeedback('Sessao iniciada para ' + ((user && (user.nome || user.email)) || 'usuario') + '.', 'ok');
+      var targetUrl = getCanonicalAppUrl();
+      logInfo('redirect_app', targetUrl);
+      window.location.replace(targetUrl);
+    }
+
+    function resolveAuthResponse(res, actionLabel) {
+      logInfo('auth_response:' + actionLabel, res);
+      if (!res || typeof res !== 'object') {
+        throw new Error('Resposta invalida do servidor durante ' + actionLabel + '.');
+      }
+      if (!res.user || !res.token) {
+        throw new Error('Resposta incompleta do servidor durante ' + actionLabel + '.');
+      }
+      return res;
+    }
+
+    function showLogin(feedbackText, feedbackType) {
+      setPanelBadge('Entrar no CRM');
+      renderFrame(
+        'Entrar no CRM',
+        'Use seu e-mail e senha para acessar o dashboard operacional.',
+        '<form class="auth-form" onsubmit="event.preventDefault(); loginSubmit();">' +
+          '<div class="field full">' +
+            '<label for="login-email">E-mail</label>' +
+            '<input id="login-email" type="email" autocomplete="username" placeholder="voce@empresa.com">' +
+          '</div>' +
+          '<div class="field full">' +
+            '<label for="login-password">Senha</label>' +
+            '<input id="login-password" type="password" autocomplete="current-password" placeholder="Sua senha">' +
+          '</div>' +
+          '<div class="auth-actions">' +
+            '<button class="btn btn-primary" type="submit" id="btn-login">Entrar</button>' +
+            '<button class="btn btn-link" type="button" id="btn-forgot" onclick="showRecoveryRequest()">Esqueci minha senha</button>' +
+          '</div>' +
+        '</form>',
+        feedbackType,
+        feedbackText
+      );
+    }
+
+    function showSetup(feedbackText, feedbackType) {
+      setPanelBadge('Primeiro acesso');
+      renderFrame(
+        'Configurar primeiro administrador',
+        'Nenhum usuario foi encontrado. Crie o primeiro acesso administrativo para concluir a implantacao.',
+        '<form class="auth-form" onsubmit="event.preventDefault(); setupSubmit();">' +
+          '<div class="auth-grid">' +
+            '<div class="field full">' +
+              '<label for="setup-name">Nome completo</label>' +
+              '<input id="setup-name" type="text" placeholder="Nome do administrador">' +
+            '</div>' +
+            '<div class="field full">' +
+              '<label for="setup-email">E-mail</label>' +
+              '<input id="setup-email" type="email" placeholder="admin@milvolts.com">' +
+            '</div>' +
+            '<div class="field full">' +
+              '<label for="setup-password">Senha</label>' +
+              '<input id="setup-password" type="password" placeholder="Minimo de 8 caracteres">' +
+            '</div>' +
+          '</div>' +
+          '<div class="auth-actions">' +
+            '<button class="btn btn-primary" type="submit" id="btn-setup">Criar administrador</button>' +
+          '</div>' +
+        '</form>',
+        feedbackType,
+        feedbackText
+      );
+    }
+
+    function showInviteAccept(data, feedbackText, feedbackType) {
+      setPanelBadge('Convite pendente');
+      renderFrame(
+        'Ativar acesso',
+        'Defina sua senha para concluir o convite enviado para ' + (data && data.email ? data.email : 'seu e-mail') + '.',
+        '<form class="auth-form" onsubmit="event.preventDefault(); acceptInviteSubmit();">' +
+          '<div class="auth-grid">' +
+            '<div class="field full">' +
+              '<label for="invite-name">Nome</label>' +
+              '<input id="invite-name" type="text" value="' + esc((data && data.nome) || '') + '" placeholder="Seu nome">' +
+            '</div>' +
+            '<div class="field full">' +
+              '<label for="invite-email">E-mail</label>' +
+              '<input id="invite-email" type="email" value="' + esc((data && data.email) || '') + '" disabled>' +
+            '</div>' +
+            '<div class="field full">' +
+              '<label for="invite-password">Nova senha</label>' +
+              '<input id="invite-password" type="password" placeholder="Minimo de 8 caracteres">' +
+            '</div>' +
+          '</div>' +
+          '<div class="auth-actions">' +
+            '<button class="btn btn-primary" type="submit" id="btn-invite">Concluir convite</button>' +
+            '<button class="btn btn-link" type="button" onclick="showLogin()">Voltar ao login</button>' +
+          '</div>' +
+        '</form>',
+        feedbackType,
+        feedbackText
+      );
+    }
+
+    function showRecoveryRequest(feedbackText, feedbackType) {
+      setPanelBadge('Recuperacao');
+      renderFrame(
+        'Recuperar senha',
+        'Informe seu e-mail. Se ele existir na base, enviaremos um codigo de 6 digitos valido por 5 minutos.',
+        '<form class="auth-form" onsubmit="event.preventDefault(); requestRecoveryCodeSubmit();">' +
+          '<div class="field full">' +
+            '<label for="recovery-email">E-mail cadastrado</label>' +
+            '<input id="recovery-email" type="email" placeholder="voce@empresa.com">' +
+          '</div>' +
+          '<div class="auth-actions">' +
+            '<button class="btn btn-primary" type="submit" id="btn-request-code">Enviar codigo</button>' +
+            '<button class="btn btn-secondary" type="button" onclick="showLogin()">Voltar ao login</button>' +
+          '</div>' +
+        '</form>',
+        feedbackType,
+        feedbackText
+      );
+    }
+
+    function showVerifyCode(email, feedbackText, feedbackType) {
+      AUTH_STATE.recovery.email = email || AUTH_STATE.recovery.email || '';
+      setPanelBadge('Validar codigo');
+      renderFrame(
+        'Validar codigo',
+        'Digite o codigo de 6 digitos recebido por e-mail para liberar a redefinicao da senha.',
+        '<form class="auth-form" onsubmit="event.preventDefault(); verifyRecoveryCodeSubmit();">' +
+          '<div class="auth-grid">' +
+            '<div class="field full">' +
+              '<label for="verify-email">E-mail</label>' +
+              '<input id="verify-email" type="email" value="' + esc(AUTH_STATE.recovery.email) + '" placeholder="voce@empresa.com">' +
+            '</div>' +
+            '<div class="field full">' +
+              '<label for="verify-code">Codigo de recuperacao</label>' +
+              '<input id="verify-code" type="text" inputmode="numeric" maxlength="6" placeholder="000000">' +
+            '</div>' +
+          '</div>' +
+          '<div class="auth-actions">' +
+            '<button class="btn btn-primary" type="submit" id="btn-verify-code">Validar codigo</button>' +
+            '<button class="btn btn-secondary" type="button" id="btn-resend-code" onclick="resendRecoveryCode()">Reenviar codigo</button>' +
+            '<button class="btn btn-link" type="button" onclick="showRecoveryRequest()">Alterar e-mail</button>' +
+          '</div>' +
+        '</form>',
+        feedbackType,
+        feedbackText
+      );
+    }
+
+    function showResetPassword(recovery, feedbackText, feedbackType) {
+      AUTH_STATE.recovery = recovery || AUTH_STATE.recovery;
+      setPanelBadge('Nova senha');
+      renderFrame(
+        'Definir nova senha',
+        'Codigo validado. Escolha a nova senha para concluir a recuperacao da conta.',
+        '<form class="auth-form" onsubmit="event.preventDefault(); resetPasswordSubmit();">' +
+          '<div class="auth-grid">' +
+            '<div class="field full">' +
+              '<label for="reset-email">E-mail</label>' +
+              '<input id="reset-email" type="email" value="' + esc((AUTH_STATE.recovery && AUTH_STATE.recovery.email) || '') + '" disabled>' +
+            '</div>' +
+            '<div class="field full">' +
+              '<label for="reset-password">Nova senha</label>' +
+              '<input id="reset-password" type="password" placeholder="Minimo de 8 caracteres">' +
+            '</div>' +
+            '<div class="field full">' +
+              '<label for="reset-password-confirm">Confirmar nova senha</label>' +
+              '<input id="reset-password-confirm" type="password" placeholder="Repita a nova senha">' +
+            '</div>' +
+          '</div>' +
+          '<div class="auth-actions">' +
+            '<button class="btn btn-primary" type="submit" id="btn-reset-password">Redefinir senha</button>' +
+            '<button class="btn btn-secondary" type="button" onclick="showLogin()">Voltar ao login</button>' +
+          '</div>' +
+        '</form>',
+        feedbackType,
+        feedbackText
+      );
+    }
+
+    function setupSubmit() {
+      var nome = document.getElementById('setup-name').value.trim();
+      var email = document.getElementById('setup-email').value.trim();
+      var senha = document.getElementById('setup-password').value;
+      setButtonLoading('btn-setup', true, 'Criando...');
+      google.script.run
+        .withSuccessHandler(function(res) {
+          setButtonLoading('btn-setup', false);
+          try {
+            var authRes = resolveAuthResponse(res, 'a criacao do administrador');
+            finalizeLogin(authRes.user, authRes.token);
+          } catch (err) {
+            showSetup(err.message || String(err), 'err');
+          }
+        })
+        .withFailureHandler(function(err) {
+          setButtonLoading('btn-setup', false);
+          showSetup(err.message || String(err), 'err');
+        })
+        .setupPrimeiroAdmin(nome, email, senha);
+    }
+
+    function loginSubmit() {
+      var email = document.getElementById('login-email').value.trim();
+      var senha = document.getElementById('login-password').value;
+      setButtonLoading('btn-login', true, 'Entrando...');
+      google.script.run
+        .withSuccessHandler(function(res) {
+          setButtonLoading('btn-login', false);
+          try {
+            var authRes = resolveAuthResponse(res, 'o login');
+            finalizeLogin(authRes.user, authRes.token);
+          } catch (err) {
+            showLogin(err.message || String(err), 'err');
+          }
+        })
+        .withFailureHandler(function(err) {
+          setButtonLoading('btn-login', false);
+          showLogin(err.message || String(err), 'err');
+        })
+        .loginUsuario(email, senha);
+    }
+
+    function acceptInviteSubmit() {
+      var token = getQueryParam('inviteToken');
+      var nome = document.getElementById('invite-name').value.trim();
+      var senha = document.getElementById('invite-password').value;
+      setButtonLoading('btn-invite', true, 'Validando...');
+      google.script.run
+        .withSuccessHandler(function(res) {
+          setButtonLoading('btn-invite', false);
+          try {
+            var authRes = resolveAuthResponse(res, 'a ativacao do convite');
+            finalizeLogin(authRes.user, authRes.token);
+          } catch (err) {
+            showInviteAccept({
+              nome: nome,
+              email: document.getElementById('invite-email').value,
+            }, err.message || String(err), 'err');
+          }
+        })
+        .withFailureHandler(function(err) {
+          setButtonLoading('btn-invite', false);
+          showInviteAccept({
+            nome: nome,
+            email: document.getElementById('invite-email').value,
+          }, err.message || String(err), 'err');
+        })
+        .aceitarConvite(token, nome, senha);
+    }
+
+    function requestRecoveryCodeSubmit() {
+      var email = document.getElementById('recovery-email').value.trim();
+      AUTH_STATE.recovery = { email: email, accessToken: '' };
+      setButtonLoading('btn-request-code', true, 'Enviando...');
+      google.script.run
+        .withSuccessHandler(function() {
+          setButtonLoading('btn-request-code', false);
+          showVerifyCode(email, 'Se o e-mail existir, enviamos um codigo de 6 digitos para a caixa de entrada.', 'ok');
+        })
+        .withFailureHandler(function(err) {
+          setButtonLoading('btn-request-code', false);
+          showRecoveryRequest(err.message || String(err), 'err');
+        })
+        .solicitarCodigoRecuperacao(email);
+    }
+
+    function resendRecoveryCode() {
+      var email = (document.getElementById('verify-email') || {}).value || AUTH_STATE.recovery.email;
+      if (!email) {
+        showRecoveryRequest('Informe o e-mail para gerar um novo codigo.', 'warn');
+        return;
+      }
+      AUTH_STATE.recovery.email = email.trim();
+      setButtonLoading('btn-resend-code', true, 'Reenviando...');
+      google.script.run
+        .withSuccessHandler(function() {
+          setButtonLoading('btn-resend-code', false);
+          showVerifyCode(AUTH_STATE.recovery.email, 'Se o e-mail existir, um novo codigo foi enviado.', 'ok');
+        })
+        .withFailureHandler(function(err) {
+          setButtonLoading('btn-resend-code', false);
+          showVerifyCode(AUTH_STATE.recovery.email, err.message || String(err), 'err');
+        })
+        .solicitarCodigoRecuperacao(AUTH_STATE.recovery.email);
+    }
+
+    function verifyRecoveryCodeSubmit() {
+      var email = document.getElementById('verify-email').value.trim();
+      var code = (document.getElementById('verify-code').value || '').replace(/\D/g, '').slice(0, 6);
+      AUTH_STATE.recovery.email = email;
+      setButtonLoading('btn-verify-code', true, 'Validando...');
+      google.script.run
+        .withSuccessHandler(function(res) {
+          setButtonLoading('btn-verify-code', false);
+          AUTH_STATE.recovery = {
+            email: res.email,
+            accessToken: res.accessToken,
+          };
+          showResetPassword(AUTH_STATE.recovery, 'Codigo validado. Agora defina a nova senha.', 'ok');
+        })
+        .withFailureHandler(function(err) {
+          setButtonLoading('btn-verify-code', false);
+          showVerifyCode(email, err.message || String(err), 'err');
+        })
+        .validarCodigoRecuperacao(email, code);
+    }
+
+    function resetPasswordSubmit() {
+      var senha = document.getElementById('reset-password').value;
+      var confirm = document.getElementById('reset-password-confirm').value;
+      if (senha !== confirm) {
+        showResetPassword(AUTH_STATE.recovery, 'A confirmacao da senha nao confere.', 'err');
+        return;
+      }
+      setButtonLoading('btn-reset-password', true, 'Salvando...');
+      google.script.run
+        .withSuccessHandler(function() {
+          setButtonLoading('btn-reset-password', false);
+          AUTH_STATE.recovery = { email: '', accessToken: '' };
+          showLogin('Senha redefinida com sucesso. Faça login com a nova senha.', 'ok');
+        })
+        .withFailureHandler(function(err) {
+          setButtonLoading('btn-reset-password', false);
+          showResetPassword(AUTH_STATE.recovery, err.message || String(err), 'err');
+        })
+        .redefinirSenhaComCodigo(AUTH_STATE.recovery.email, AUTH_STATE.recovery.accessToken, senha);
+    }
+
+    function bootLogin() {
+      logInfo('boot');
+      setPanelBadge('Validando ambiente');
+      renderFrame('Preparando acesso', 'Estamos verificando a sessao e o estado da autenticacao.', '<div class="feedback">Carregando...</div>', '', '');
+
+      var inviteToken = getQueryParam('inviteToken');
+      var resetToken = getQueryParam('resetToken');
+      var carriedFeedback = consumeFeedback();
+      var stored = getStoredToken();
+
+      google.script.run
+        .withSuccessHandler(function(info) {
+          AUTH_STATE.bootstrap = info || {};
+          storeCanonicalUrls(info || {});
+          if (stored) {
+            google.script.run
+              .withSuccessHandler(function(sessionInfo) {
+                if (sessionInfo && sessionInfo.authenticated) {
+                  logInfo('session_ok_redirect_app', getCanonicalAppUrl());
+                  window.location.replace(getCanonicalAppUrl());
+                  return;
+                }
+                storeToken('');
+                continueBoot(info, inviteToken, resetToken, carriedFeedback);
+              })
+              .withFailureHandler(function() {
+                storeToken('');
+                continueBoot(info, inviteToken, resetToken, carriedFeedback);
+              })
+              .getSessionInfo(stored);
+            return;
+          }
+          continueBoot(info, inviteToken, resetToken, carriedFeedback);
+        })
+        .withFailureHandler(function(err) {
+          showLogin(err.message || String(err), 'err');
+        })
+        .getAuthBootstrap();
+    }
+
+    function continueBoot(info, inviteToken, resetToken, carriedFeedback) {
+      if (inviteToken) {
+        google.script.run
+          .withSuccessHandler(function(data) {
+            showInviteAccept(data, carriedFeedback && carriedFeedback.message, carriedFeedback && carriedFeedback.type);
+          })
+          .withFailureHandler(function(err) {
+            showLogin(err.message || String(err), 'err');
+          })
+          .verificarConvite(inviteToken);
+        return;
+      }
+
+      if (resetToken) {
+        showRecoveryRequest('O fluxo antigo por link foi descontinuado. Solicite um codigo de 6 digitos para continuar.', 'warn');
+        return;
+      }
+
+      if (info && info.needsSetup) {
+        showSetup(carriedFeedback && carriedFeedback.message, carriedFeedback && carriedFeedback.type);
+        return;
+      }
+
+      if (carriedFeedback && carriedFeedback.message) {
+        showLogin(carriedFeedback.message, carriedFeedback.type);
+        return;
+      }
+
+      showLogin();
+    }
+
+    document.addEventListener('DOMContentLoaded', bootLogin);
+    document.addEventListener('DOMContentLoaded', function() {
+      setupPwaSupport();
+      maybeShowInstallPrompt();
+    });
+  </script>
+</body>
+</html>

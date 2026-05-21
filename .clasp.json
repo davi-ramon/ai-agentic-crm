@@ -1,0 +1,20 @@
+{
+  "scriptId": "1a3e5pPEZtd5DGCgZ81lUSBqoOinuCL-SVB8L7gMTI2Svh7t8DqtXugfz",
+  "rootDir": ".",
+  "filePushOrder": [
+    "config.gs",
+    "auth.gs",
+    "planilha.gs",
+    "servicos.gs",
+    "codigo.gs",
+    "dashboard_servidor.gs",
+    "automacao_devolver.gs",
+    "automacao_followup.gs",
+    "automacao_monitoramento.gs",
+    "automacao_thaynan.gs",
+    "pdv.gs",
+    "pwa.gs",
+    "index.html",
+    "login.html"
+  ]
+}

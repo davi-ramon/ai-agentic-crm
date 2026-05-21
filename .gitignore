@@ -1,0 +1,54 @@
+# ================================================================
+#  .gitignore — AI Agentic CRM
+#  Exclui credenciais reais, dados de clientes e arquivos locais.
+#  Para contribuir: copie config.example.gs → config.gs e preencha.
+# ================================================================
+
+# ── CREDENCIAIS E DADOS SENSÍVEIS (NUNCA subir) ─────────────────
+config.gs
+*.env
+.env.*
+secrets.*
+credentials.*
+
+# ── DADOS DE CLIENTES (privacidade LGPD/GDPR) ───────────────────
+*.xlsx
+*.xls
+*.csv
+CRM_BANCO_DE_DADOS_*
+
+# ── CLASP AUTH (token pessoal da sua conta Google) ──────────────
+# O .clasp.json (scriptId) pode ser subido; o .clasprc.json NÃO.
+.clasprc.json
+
+# ── NODE / NPM (caso instale dependências futuras) ──────────────
+node_modules/
+package-lock.json
+yarn.lock
+.pnp.*
+.yarn/
+
+# ── IDEs E EDITORES ─────────────────────────────────────────────
+.vscode/
+.idea/
+*.suo
+*.user
+*.swp
+*.swo
+
+# ── SISTEMA OPERACIONAL ─────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# ── LOGS E TEMPORÁRIOS ──────────────────────────────────────────
+*.log
+*.tmp
+*.bak
+*.orig
+dist/
+build/
+
+# ── CLASP BUILD (gerado pelo clasp, não é source) ───────────────
+.clasp-build/
