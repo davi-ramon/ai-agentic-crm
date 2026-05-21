@@ -6,6 +6,7 @@
 
 # ── CREDENCIAIS E DADOS SENSÍVEIS (NUNCA subir) ─────────────────
 config.gs
+.secrets.ps1
 *.env
 .env.*
 secrets.*

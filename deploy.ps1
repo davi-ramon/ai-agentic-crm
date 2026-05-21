@@ -1,124 +1,139 @@
 # ================================================================
-#  deploy.ps1 — Deploy automatizado: CLASP + GitHub
+#  deploy.ps1 — Deploy automatico: CLASP + GitHub
 #  AI Agentic CRM | Milvolts LTDA
 #
-#  USO:
-#    .\deploy.ps1                         # usa timestamp como mensagem
-#    .\deploy.ps1 -Message "feat: PDV sync com IA"
-#    .\deploy.ps1 -SomenteGitHub          # só push GitHub, sem CLASP
-#    .\deploy.ps1 -SomenteClasp           # só push CLASP, sem GitHub
-#
+#  USO (sem interacao, zero prompts):
+#    .\deploy.ps1
+#    .\deploy.ps1 -Message "feat: nova feature"
+#    .\deploy.ps1 -SomenteGitHub -Message "docs: atualiza readme"
+#    .\deploy.ps1 -SomenteClasp
 # ================================================================
 
 param(
-    [string]$Message      = "",
+    [string]$Message     = "",
     [switch]$SomenteGitHub,
-    [switch]$SomenteClasp,
-    [switch]$Silencioso
+    [switch]$SomenteClasp
 )
 
+# ── Carrega credenciais do arquivo local (gitignored) ────────────
+$SECRETS_FILE = Join-Path $PSScriptRoot ".secrets.ps1"
+if (-not (Test-Path $SECRETS_FILE)) {
+    Write-Host "ERRO: .secrets.ps1 nao encontrado em $PSScriptRoot" -ForegroundColor Red
+    Write-Host "Execute configure.ps1 para criar o arquivo de credenciais." -ForegroundColor Yellow
+    exit 1
+}
+. $SECRETS_FILE
+
+# ── Deployment ID fixo (Apps Script) ────────────────────────────
 $DEPLOYMENT_ID = "AKfycbxK1lQm3ZwnXRdUqdDN_9URR8IrrTchZCYmtF6THn8"
-$BRANCH        = "main"
 
-# ── Gera mensagem padrão com timestamp ──────────────────────────
+# ── Mensagem padrao com timestamp ────────────────────────────────
 if (-not $Message) {
-    $Message = "deploy: $(Get-Date -Format 'yyyy-MM-dd HH:mm') — auto-deploy"
+    $Message = "deploy: $(Get-Date -Format 'yyyy-MM-dd HH:mm')"
 }
 
-function Write-Step { param([string]$Icon, [string]$Text, [string]$Color = "Cyan")
-    Write-Host "`n$Icon  $Text" -ForegroundColor $Color
-}
-function Write-Ok   { param([string]$Text) Write-Host "   ✅ $Text" -ForegroundColor Green }
-function Write-Fail { param([string]$Text) Write-Host "   ❌ $Text" -ForegroundColor Red }
-function Write-Warn { param([string]$Text) Write-Host "   ⚠️  $Text" -ForegroundColor Yellow }
+# ── Helpers visuais ──────────────────────────────────────────────
+function OK   { param([string]$t) Write-Host "  [OK] $t" -ForegroundColor Green }
+function FAIL { param([string]$t) Write-Host "  [ERRO] $t" -ForegroundColor Red; $script:errors++ }
+function STEP { param([string]$t) Write-Host "`n>> $t" -ForegroundColor Cyan }
+function INFO { param([string]$t) Write-Host "     $t" -ForegroundColor DarkGray }
 
-Write-Host "`n╔══════════════════════════════════════════╗" -ForegroundColor Magenta
-Write-Host "║   🚀  AI Agentic CRM — Auto Deploy      ║" -ForegroundColor Magenta
-Write-Host "╚══════════════════════════════════════════╝" -ForegroundColor Magenta
-Write-Host "   Mensagem : $Message" -ForegroundColor DarkGray
-Write-Host "   Branch   : $BRANCH" -ForegroundColor DarkGray
-Write-Host "   Deploy ID: $DEPLOYMENT_ID" -ForegroundColor DarkGray
+$script:errors = 0
 
-$ErrorsFound = 0
+Write-Host ""
+Write-Host "================================================" -ForegroundColor Magenta
+Write-Host "  AI Agentic CRM - Auto Deploy" -ForegroundColor Magenta
+Write-Host "  $Message" -ForegroundColor DarkGray
+Write-Host "================================================" -ForegroundColor Magenta
 
-# ════════════════════════════════════════════════════════════════
+# ================================================================
 #  BLOCO 1 — CLASP (Google Apps Script)
-# ════════════════════════════════════════════════════════════════
+# ================================================================
 if (-not $SomenteGitHub) {
 
-    Write-Step "📤" "Enviando código para o Google Apps Script (clasp push)..."
+    STEP "Enviando codigo para o Google Apps Script..."
 
-    clasp push --force
+    clasp push --force 2>&1 | ForEach-Object { INFO $_ }
+
     if ($LASTEXITCODE -ne 0) {
-        Write-Fail "clasp push falhou (código $LASTEXITCODE)."
-        Write-Warn "Verifique se você está autenticado: clasp login"
-        $ErrorsFound++
+        FAIL "clasp push falhou."
+        INFO "Verifique: clasp login (conta ads.deyvid@gmail.com)"
     } else {
-        Write-Ok "Código enviado com sucesso."
-    }
+        OK "Codigo enviado ao Apps Script."
 
-    if ($ErrorsFound -eq 0) {
-        Write-Step "📦" "Criando nova versão de implantação (clasp deploy)..."
+        STEP "Criando nova versao de implantacao..."
 
-        clasp deploy --deploymentId $DEPLOYMENT_ID --description $Message
+        clasp deploy --deploymentId $DEPLOYMENT_ID --description $Message 2>&1 | ForEach-Object { INFO $_ }
+
         if ($LASTEXITCODE -ne 0) {
-            Write-Fail "clasp deploy falhou."
-            $ErrorsFound++
+            FAIL "clasp deploy falhou."
         } else {
-            Write-Ok "Versão implantada em producao."
-            Write-Host "   🌐 URL: https://script.google.com/macros/s/$DEPLOYMENT_ID/exec" -ForegroundColor DarkCyan
+            OK "Versao publicada."
+            INFO "URL producao : https://script.google.com/macros/s/$DEPLOYMENT_ID/exec"
+            INFO "URL dev/teste: https://script.google.com/macros/s/$DEPLOYMENT_ID/dev"
         }
     }
 }
 
-# ════════════════════════════════════════════════════════════════
-#  BLOCO 2 — GITHUB
-# ════════════════════════════════════════════════════════════════
+# ================================================================
+#  BLOCO 2 — GITHUB (totalmente automatico via token)
+# ================================================================
 if (-not $SomenteClasp) {
 
-    Write-Step "🐙" "Preparando commit para o GitHub..."
+    STEP "Preparando commit para o GitHub..."
 
-    # Verifica se remote existe
-    $remoteUrl = git remote get-url origin 2>$null
-    if (-not $remoteUrl) {
-        Write-Warn "Remote 'origin' nao configurado."
-        Write-Host "   Execute uma vez:" -ForegroundColor Yellow
-        Write-Host "   git remote add origin https://github.com/SEU_USUARIO/ai-agentic-crm.git" -ForegroundColor DarkYellow
+    # Garante que nome/email do autor estao configurados localmente
+    git config user.name  $GIT_AUTHOR_NAME
+    git config user.email $GIT_AUTHOR_EMAIL
+
+    # Verifica se ha mudancas para commitar
+    $changed = git status --porcelain
+    if (-not $changed) {
+        OK "Nenhuma alteracao nova para o GitHub."
     } else {
-        # Adiciona todos os arquivos (respeitando .gitignore)
+        # Stage de todos os arquivos (respeitando .gitignore — config.gs e .secrets.ps1 serao ignorados)
         git add .
 
-        # Verifica se há algo para commitar
-        $status = git status --porcelain
-        if (-not $status) {
-            Write-Warn "Nenhuma alteracao para commitar no GitHub."
+        git commit -m $Message
+        if ($LASTEXITCODE -ne 0) {
+            FAIL "git commit falhou."
         } else {
-            git commit -m $Message
-            if ($LASTEXITCODE -ne 0) {
-                Write-Fail "git commit falhou."
-                $ErrorsFound++
-            } else {
-                Write-Ok "Commit criado: $Message"
+            OK "Commit criado: $Message"
 
-                git push origin $BRANCH
-                if ($LASTEXITCODE -ne 0) {
-                    Write-Fail "git push falhou. Tente: git push --set-upstream origin $BRANCH"
-                    $ErrorsFound++
-                } else {
-                    Write-Ok "Push para GitHub concluido."
-                }
+            STEP "Fazendo push para GitHub ($GITHUB_USER/$GITHUB_REPO)..."
+
+            # Usa token no URL para autenticar sem prompt (nao salva no git config)
+            $remoteComToken = "https://$($GITHUB_TOKEN)@github.com/$GITHUB_USER/$GITHUB_REPO.git"
+            $remotePublico  = "https://github.com/$GITHUB_USER/$GITHUB_REPO.git"
+
+            git remote set-url origin $remoteComToken
+
+            git push origin $GITHUB_BRANCH 2>&1 | ForEach-Object { INFO $_ }
+            $pushCode = $LASTEXITCODE
+
+            # Remove o token da URL imediatamente apos o push
+            git remote set-url origin $remotePublico
+
+            if ($pushCode -ne 0) {
+                FAIL "git push falhou."
+                INFO "Verifique se o repo existe: https://github.com/$GITHUB_USER/$GITHUB_REPO"
+            } else {
+                OK "Push concluido!"
+                INFO "Repositorio: https://github.com/$GITHUB_USER/$GITHUB_REPO"
             }
         }
     }
 }
 
-# ════════════════════════════════════════════════════════════════
-#  RESUMO FINAL
-# ════════════════════════════════════════════════════════════════
-Write-Host "`n──────────────────────────────────────────" -ForegroundColor DarkGray
-if ($ErrorsFound -eq 0) {
-    Write-Host "✅  Deploy completo sem erros!" -ForegroundColor Green
+# ================================================================
+#  RESUMO
+# ================================================================
+Write-Host ""
+Write-Host "================================================" -ForegroundColor DarkGray
+if ($script:errors -eq 0) {
+    Write-Host "  DEPLOY COMPLETO - sem erros." -ForegroundColor Green
 } else {
-    Write-Host "⚠️  Deploy concluido com $ErrorsFound erro(s). Verifique acima." -ForegroundColor Yellow
+    Write-Host "  DEPLOY com $($script:errors) erro(s). Veja acima." -ForegroundColor Yellow
 }
-Write-Host "──────────────────────────────────────────`n" -ForegroundColor DarkGray
+Write-Host "================================================" -ForegroundColor DarkGray
+Write-Host ""
