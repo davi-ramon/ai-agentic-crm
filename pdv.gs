@@ -329,6 +329,59 @@ function _toFloat(v) {
 }
 
 // ──────────────────────────────────────────────────────────────
+//  DIAGNÓSTICO PDV (execute no editor do Apps Script)
+// ──────────────────────────────────────────────────────────────
+
+/**
+ * Diagnóstico completo do PDV.
+ * Execute diretamente no editor do Apps Script (sem authToken).
+ * Mostra: nome real da aba, total de linhas, cabeçalhos, primeiros registros,
+ * e testa a API do GPT Maker (busca treinamentos existentes).
+ */
+function diagnosticarPDV() {
+  var ss = getSpreadsheet();
+  var resultado = {
+    spreadsheetId:   ss.getId(),
+    spreadsheetName: ss.getName(),
+    abas:            ss.getSheets().map(function(s) { return s.getName(); }),
+    pdvSheet:        null,
+    totalLinhas:     0,
+    cabecalhos:      [],
+    primeirosRegistros: [],
+    gptMaker:        null,
+  };
+
+  var sh = ss.getSheetByName(PDV_SHEET);
+  if (!sh) {
+    resultado.pdvSheet = 'NÃO ENCONTRADA (nome esperado: "' + PDV_SHEET + '")';
+    Logger.log('[DIAGNÓSTICO PDV] ' + JSON.stringify(resultado));
+    return resultado;
+  }
+
+  resultado.pdvSheet    = 'OK — "' + sh.getName() + '"';
+  resultado.totalLinhas = sh.getLastRow();
+
+  var d = sh.getDataRange().getValues();
+  if (d.length > 0) resultado.cabecalhos = d[0];
+  if (d.length > 1) {
+    resultado.primeirosRegistros = d.slice(1, 4).map(function(r) {
+      return { id: r[0], nome: r[1], ativo: r[13], memoriaId: r[14] };
+    });
+  }
+
+  // Testa GPT Maker
+  try {
+    var treins = gptMakerBuscarTreinamentos('PDV-ID', 5);
+    resultado.gptMaker = { ok: true, treinamentosEncontrados: treins.length, amostra: treins.slice(0,2) };
+  } catch (e) {
+    resultado.gptMaker = { ok: false, erro: e.message };
+  }
+
+  Logger.log('[DIAGNÓSTICO PDV] ' + JSON.stringify(resultado));
+  return resultado;
+}
+
+// ──────────────────────────────────────────────────────────────
 //  SINCRONIZAÇÃO EM MASSA (use para reprocessar tudo de uma vez)
 // ──────────────────────────────────────────────────────────────
 

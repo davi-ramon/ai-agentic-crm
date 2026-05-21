@@ -1,0 +1,4888 @@
+﻿Agentes
+Lista agentes
+Lista os agentes disponíveis nesse workspace
+GET
+/
+v2
+/
+workspace
+/
+{workspaceId}
+/
+agents
+Try it
+cURL
+curl --request GET \
+  --url https://api.gptmaker.ai/v2/workspace/{workspaceId}/agents \
+  --header 'Authorization: Bearer <token>'
+200
+400
+403
+[
+  {
+    "id": "<string>",
+    "name": "<string>",
+    "behavior": "<string>",
+    "avatar": "<string>",
+    "communicationType": "FORMAL",
+    "type": "SUPPORT",
+    "jobName": "<string>",
+    "jobSite": "<string>",
+    "jobDescription": "<string>"
+  }
+]
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+workspaceId
+stringrequired
+ID do workspace
+Query Parameters
+​
+page
+integer<int32>
+Número da página
+​
+pageSize
+integer<int32>
+Tamanho da página
+​
+query
+string
+Filtro pelo nome do agente
+Response
+200
+application/json
+Lista de agentes
+​
+id
+string
+ID do agente
+​
+name
+string
+Nome do agente
+​
+behavior
+string
+Comportamento do agente
+​
+avatar
+string
+URL de um avatar para o agente
+​
+communicationType
+enum<string>
+Tipo de comunicação
+Available options: FORMAL, NORMAL, RELAXED
+​
+type
+enum<string>
+Objetivo do agente
+Available options: SUPPORT, SALE, PERSONAL
+​
+jobName
+string
+Nome da empresa ou produto que o agente vai trabalhar
+​
+jobSite
+string
+Site da empresa
+​
+jobDescription
+string
+Descrição sobre a empresa
+_________________________________________________________________________
+
+
+Agentes
+Criar agente
+Cria um novo agente no workspace
+POST
+/
+v2
+/
+workspace
+/
+{workspaceId}
+/
+agents
+Try it
+cURL
+curl --request POST \
+  --url https://api.gptmaker.ai/v2/workspace/{workspaceId}/agents \
+  --header 'Authorization: Bearer <token>' \
+  --header 'Content-Type: application/json' \
+  --data '
+{
+  "name": "<string>",
+  "avatar": "<string>",
+  "behavior": "<string>",
+  "communicationType": "FORMAL",
+  "type": "SUPPORT",
+  "jobName": "<string>",
+  "jobSite": "<string>",
+  "jobDescription": "<string>"
+}
+'
+200
+400
+403
+{
+  "id": "<string>",
+  "name": "<string>",
+  "behavior": "<string>",
+  "avatar": "<string>",
+  "communicationType": "FORMAL",
+  "type": "SUPPORT",
+  "jobName": "<string>",
+  "jobSite": "<string>",
+  "jobDescription": "<string>"
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+workspaceId
+stringrequired
+ID do workspace
+Body
+application/json
+Dados do agente a ser criado
+​
+name
+string
+Nome do agente
+​
+avatar
+string
+URL de um avatar para o agente
+​
+behavior
+string
+Comportamento do agente
+​
+communicationType
+enum<string>
+Tipo de comunicação
+Available options: FORMAL, NORMAL, RELAXED
+​
+type
+enum<string>
+Objetivo do agente
+Available options: SUPPORT, SALE, PERSONAL
+​
+jobName
+string
+Nome da empresa ou produto que o agente vai trabalhar
+​
+jobSite
+string
+Site da empresa
+​
+jobDescription
+string
+Descrição sobre a empresa
+Response
+200
+application/json
+Agente criado com sucesso
+​
+id
+string
+ID do agente
+​
+name
+string
+Nome do agente
+​
+behavior
+string
+Comportamento do agente
+​
+avatar
+string
+URL de um avatar para o agente
+​
+communicationType
+enum<string>
+Tipo de comunicação
+Available options: FORMAL, NORMAL, RELAXED
+​
+type
+enum<string>
+Objetivo do agente
+Available options: SUPPORT, SALE, PERSONAL
+​
+jobName
+string
+Nome da empresa ou produto que o agente vai trabalhar
+​
+jobSite
+string
+Site da empresa
+​
+jobDescription
+string
+Descrição sobre a empresa
+_______________________________________________________________
+Agentes
+Deletar agente
+Remover agente
+DELETE
+/
+v2
+/
+agent
+/
+{agentId}
+Try it
+cURL
+curl --request DELETE \
+  --url https://api.gptmaker.ai/v2/agent/{agentId} \
+  --header 'Authorization: Bearer <token>'
+200
+400
+403
+{
+  "success": true
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+agentId
+stringrequired
+ID do agente
+Response
+200
+application/json
+Agente removido com sucesso
+​
+success
+boolean
+____________________________________________________________________
+Agentes
+Buscar agente por ID
+Busca dados do agente por ID
+GET
+/
+v2
+/
+agent
+/
+{agentId}
+Try it
+cURL
+curl --request GET \
+  --url https://api.gptmaker.ai/v2/agent/{agentId} \
+  --header 'Authorization: Bearer <token>'
+200
+400
+403
+{
+  "id": "<string>",
+  "name": "<string>",
+  "behavior": "<string>",
+  "avatar": "<string>",
+  "communicationType": "FORMAL",
+  "type": "SUPPORT",
+  "jobName": "<string>",
+  "jobSite": "<string>",
+  "jobDescription": "<string>"
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+agentId
+stringrequired
+ID do agente
+Response
+200
+application/json
+Dados do agente
+​
+id
+string
+ID do agente
+​
+name
+string
+Nome do agente
+​
+behavior
+string
+Comportamento do agente
+​
+avatar
+string
+URL de um avatar para o agente
+​
+communicationType
+enum<string>
+Tipo de comunicação
+Available options: FORMAL, NORMAL, RELAXED
+​
+type
+enum<string>
+Objetivo do agente
+Available options: SUPPORT, SALE, PERSONAL
+​
+jobName
+string
+Nome da empresa ou produto que o agente vai trabalhar
+​
+jobSite
+string
+Site da empresa
+​
+jobDescription
+string
+Descrição sobre a empresa
+_________________________________________________________________________
+Agentes
+Consumo de créditos
+Retorna o consumo de créditos por agente dentro de um período
+GET
+/
+v2
+/
+agent
+/
+{agentId}
+/
+credits-spent
+Try it
+JavaScript
+const options = {method: 'GET', headers: {Authorization: 'Bearer <token>'}};
+
+
+fetch('https://api.gptmaker.ai/v2/agent/{agentId}/credits-spent', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+400
+403
+{
+  "total": 123,
+  "data": [
+    {
+      "credits": 123,
+      "year": 123,
+      "month": 123,
+      "day": 123,
+      "model": "<string>"
+    }
+  ]
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+agentId
+stringrequired
+ID do agente
+Query Parameters
+​
+year
+integer<int32>
+Ano para filtrar
+​
+month
+integer<int32>
+Mês para filtrar
+​
+day
+integer<int32>
+Dia para filtrar
+Response
+200
+application/json
+Consumo de créditos por agente
+​
+total
+integer<int32>
+Total de créditos gastos
+​
+data
+object[]
+Hide child attributes
+​
+data.credits
+integer
+Quantidade de créditos gastos
+​
+data.year
+integer
+Ano
+​
+data.month
+integer
+Mês
+​
+data.day
+integer
+Dia
+​
+data.model
+string
+Modelo de IA que consumiu os créditos
+Buscar agente por ID
+Atualizar o agente
+instagram
+linkedin
+Powered by
+This documentation is built and hosted on Mintlify, a developer documentation platform
+Consumo de créditos - GPT Maker
+
+
+______________________________________________________________________
+Agentes
+Atualizar o agente
+Atualiza os detalhes de um agente existente
+PUT
+/
+v2
+/
+agent
+/
+{agentId}
+Try it
+JavaScript
+const options = {
+  method: 'PUT',
+  headers: {Authorization: 'Bearer <token>', 'Content-Type': 'application/json'},
+  body: JSON.stringify({
+    name: '<string>',
+    avatar: '<string>',
+    behavior: '<string>',
+    communicationType: 'FORMAL',
+    type: 'SUPPORT',
+    jobName: '<string>',
+    jobSite: '<string>',
+    jobDescription: '<string>'
+  })
+};
+
+
+fetch('https://api.gptmaker.ai/v2/agent/{agentId}', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+400
+403
+{
+  "id": "<string>",
+  "name": "<string>",
+  "behavior": "<string>",
+  "avatar": "<string>",
+  "communicationType": "FORMAL",
+  "type": "SUPPORT",
+  "jobName": "<string>",
+  "jobSite": "<string>",
+  "jobDescription": "<string>"
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+agentId
+stringrequired
+ID do agente
+Body
+application/json
+Dados do agente a serem atualizados
+​
+name
+string
+Nome do agente
+​
+avatar
+string
+URL de um avatar para o agente
+​
+behavior
+string
+Comportamento do agente
+​
+communicationType
+enum<string>
+Tipo de comunicação
+Available options: FORMAL, NORMAL, RELAXED
+​
+type
+enum<string>
+Objetivo do agente
+Available options: SUPPORT, SALE, PERSONAL
+​
+jobName
+string
+Nome da empresa ou produto que o agente vai trabalhar
+​
+jobSite
+string
+Site da empresa
+​
+jobDescription
+string
+Descrição sobre a empresa
+Response
+200
+application/json
+Agente atualizado com sucesso
+​
+id
+string
+ID do agente
+​
+name
+string
+Nome do agente
+​
+behavior
+string
+Comportamento do agente
+​
+avatar
+string
+URL de um avatar para o agente
+​
+communicationType
+enum<string>
+Tipo de comunicação
+Available options: FORMAL, NORMAL, RELAXED
+​
+type
+enum<string>
+Objetivo do agente
+Available options: SUPPORT, SALE, PERSONAL
+​
+jobName
+string
+Nome da empresa ou produto que o agente vai trabalhar
+​
+jobSite
+string
+Site da empresa
+​
+jobDescription
+string
+Descrição sobre a empresa
+______________________________________________________________________________________
+
+
+Agentes
+Inativar agente
+Inativa um agente existente
+PUT
+/
+v2
+/
+agent
+/
+{agentId}
+/
+inactive
+Try it
+JavaScript
+const options = {method: 'PUT', headers: {Authorization: 'Bearer <token>'}};
+
+
+fetch('https://api.gptmaker.ai/v2/agent/{agentId}/inactive', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+400
+403
+{
+  "success": true
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+agentId
+stringrequired
+ID do agente
+Response
+200
+application/json
+Agente inativado com sucesso
+​
+success
+boolean
+_______________________________________________________________________________________
+
+
+Agentes
+Ativar agente
+Ativa um agente existente
+PUT
+/
+v2
+/
+agent
+/
+{agentId}
+/
+active
+Try it
+JavaScript
+const options = {method: 'PUT', headers: {Authorization: 'Bearer <token>'}};
+
+
+fetch('https://api.gptmaker.ai/v2/agent/{agentId}/active', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+400
+403
+{
+  "success": true
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+agentId
+stringrequired
+ID do agente
+Response
+200
+application/json
+Agente ativado com sucesso
+​
+success
+boolean
+_______________________________________________________________________________________
+Agentes
+Pegar configurações
+Obtém as configurações de um agente existente
+GET
+/
+v2
+/
+agent
+/
+{agentId}
+/
+settings
+Try it
+JavaScript
+const options = {method: 'GET', headers: {Authorization: 'Bearer <token>'}};
+
+
+fetch('https://api.gptmaker.ai/v2/agent/{agentId}/settings', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+400
+403
+{
+  "prefferModel": "GPT_5",
+  "timezone": "<string>",
+  "enabledHumanTransfer": true,
+  "enabledReminder": true,
+  "splitMessages": true,
+  "enabledEmoji": true,
+  "limitSubjects": true,
+  "messageGroupingTime": "NO_GROUP",
+  "maxDailyMessages": 123,
+  "maxDailyMessagesLimitAction": "TEMP_BLOCK_30S",
+  "knowledgeByFunction": true,
+  "onLackKnowLedge": "<string>"
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+agentId
+stringrequired
+ID do agente
+Response
+200
+application/json
+Configurações do agente
+​
+prefferModel
+enum<string>
+Modelo de LLM preferido
+Available options: GPT_5, GPT_5_MINI, GPT_5_1, GPT_5_2, GPT_5_MINI_V2, GPT_4_TURBO, OPEN_AI_04, OPEN_AI_03_MINI_BETA, GPT_4_1, GPT_4_1_MINI, GPT_4_O_MINI, GPT_4_O, OPEN_AI_O3_MINI, OPEN_AI_O4_MINI, OPEN_AI_O3, OPEN_AI_O1, GPT_4, CLAUDE_4_5_SONNET, CLAUDE_3_5_SONNET, CLAUDE_3_7_SONNET, CLAUDE_3_5_HAIKU, DEEPINFRA_LLAMA3_3, QWEN_2_5_MAX, DEEPSEEK_CHAT, SABIA_3, SABIA_3_1
+​
+timezone
+string
+Timezone do agente
+​
+enabledHumanTransfer
+boolean
+Define se o agente pode transferir para humano
+​
+enabledReminder
+boolean
+Define se pode agendar lembretes
+​
+splitMessages
+boolean
+Define se a mensagem será dividida em várias, caso seja muito grande
+​
+enabledEmoji
+boolean
+Define se pode usar emojis nas respostas
+​
+limitSubjects
+boolean
+Define se pode falar de outros assuntos ou apenas relacionado à empresa ou produto
+​
+messageGroupingTime
+enum<string>
+Modelo de LLM preferido
+Available options: NO_GROUP, FIVE_SEC, TEN_SEC, THIRD_SEC, ONE_MINUTE
+​
+maxDailyMessages
+integer | null
+Define o que acontece ao atingir o limite de interações por atendimento, se for nulo não usa maxDailyMessagesLimitAction
+​
+maxDailyMessagesLimitAction
+enum<string>
+Define o que acontece ao atingir o limite de interações por atendimento, vai ser usado apenas quando o maxDailyMessages não for nulo.
+Available options: TEMP_BLOCK_30S, TEMP_BLOCK_5M, TEMP_BLOCK_10M, TEMP_BLOCK_30M, TEMP_BLOCK_1H, BLOCK, TRANSFER
+​
+knowledgeByFunction
+boolean
+É reponsável por ativar a busca inteligênte do treinamento aonde o agente consulta a base de treinamentos no momento certo, para trazer respostas mais precisas
+​
+onLackKnowLedge
+string
+Na falta de conhecimento o agente lança um weebhook
+_______________________________________________________________________________________
+
+
+Atualizar configurações
+Atualiza as configurações de um agente existente
+PUT
+/
+v2
+/
+agent
+/
+{agentId}
+/
+settings
+Try it
+JavaScript
+const options = {
+  method: 'PUT',
+  headers: {Authorization: 'Bearer <token>', 'Content-Type': 'application/json'},
+  body: JSON.stringify({
+    prefferModel: 'GPT_5',
+    timezone: '<string>',
+    enabledHumanTransfer: true,
+    enabledReminder: true,
+    splitMessages: true,
+    enabledEmoji: true,
+    limitSubjects: true,
+    messageGroupingTime: 'NO_GROUP',
+    signMessages: true,
+    maxDailyMessages: 123,
+    maxDailyMessagesLimitAction: 'TEMP_BLOCK_30S',
+    knowledgeByFunction: true,
+    onLackKnowLedge: '<string>'
+  })
+};
+
+
+fetch('https://api.gptmaker.ai/v2/agent/{agentId}/settings', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+400
+403
+{
+  "success": true
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+agentId
+stringrequired
+ID do agente
+Body
+application/json
+Configurações do agente a serem atualizadas
+​
+prefferModel
+enum<string>
+Modelo de LLM preferido
+Available options: GPT_5, GPT_5_MINI, GPT_5_1, GPT_5_2, GPT_5_MINI_V2, GPT_4_TURBO, OPEN_AI_04, OPEN_AI_03_MINI_BETA, GPT_4_1, GPT_4_1_MINI, GPT_4_O_MINI, GPT_4_O, OPEN_AI_O3_MINI, OPEN_AI_O4_MINI, OPEN_AI_O3, OPEN_AI_O1, GPT_4, CLAUDE_4_5_SONNET, CLAUDE_3_5_SONNET, CLAUDE_3_7_SONNET, CLAUDE_3_5_HAIKU, DEEPINFRA_LLAMA3_3, QWEN_2_5_MAX, DEEPSEEK_CHAT, SABIA_3, SABIA_3_1
+​
+timezone
+string
+Timezone do agente
+​
+enabledHumanTransfer
+boolean
+Define se o agente pode transferir para humano
+​
+enabledReminder
+boolean
+Define se pode agendar lembretes
+​
+splitMessages
+boolean
+Define se a mensagem será dividida em várias, caso seja muito grande
+​
+enabledEmoji
+boolean
+Define se pode usar emojis nas respostas
+​
+limitSubjects
+boolean
+Define se pode falar de outros assuntos ou apenas relacionado à empresa ou produto
+​
+messageGroupingTime
+enum<string>
+Modelo de LLM preferido
+Available options: NO_GROUP, FIVE_SEC, TEN_SEC, THIRD_SEC, ONE_MINUTE
+​
+signMessages
+boolean
+Define se a mensagem do agente vai ser assinada ou não
+​
+maxDailyMessages
+integer
+É o limite de interações por atendimento aonde temos as opções (null) que representa sem limite, (20,50,100,200,500,1000) interações qualquer valor além desses não será aceito
+​
+maxDailyMessagesLimitAction
+enum<string>
+Vai ser usado apenas quando maxDailyMessages for diferente de null
+Available options: TEMP_BLOCK_30S, TEMP_BLOCK_5M, TEMP_BLOCK_10M, TEMP_BLOCK_30M, TEMP_BLOCK_1H, BLOCK, TRANSFER
+​
+knowledgeByFunction
+boolean
+É reponsável por ativar a busca inteligênte do treinamento aonde o agente consulta a base de treinamentos no momento certo, para trazer respostas mais precisas
+​
+onLackKnowLedge
+string
+Na falta de conhecimento o agente lança um weebhook
+Response
+200
+application/json
+Configurações atualizadas com sucesso
+​
+success
+boolean
+_____________________________________________________________________________________
+
+
+gentes
+Pegar Webhooks
+Obtém os webhooks configurados em um agente
+GET
+/
+v2
+/
+agent
+/
+{agentId}
+/
+webhooks
+Try it
+JavaScript
+const options = {method: 'GET', headers: {Authorization: 'Bearer <token>'}};
+
+
+fetch('https://api.gptmaker.ai/v2/agent/{agentId}/webhooks', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+400
+403
+{
+  "onNewMessage": "<string>",
+  "onLackKnowLedge": "<string>",
+  "onTransfer": "<string>",
+  "onFirstInteraction": "<string>",
+  "onStartInteraction": "<string>",
+  "onFinishInteraction": "<string>",
+  "onCreateEvent": "<string>",
+  "onCancelEvent": "<string>"
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+agentId
+stringrequired
+ID do agente
+Response
+200
+application/json
+Webhooks
+​
+onNewMessage
+string
+Webhook disparado automaticamente sempre que uma nova mensagem chega em um chat.
+​
+onLackKnowLedge
+string
+Webhook disparado quando o agente não sabe responder a uma pergunta.
+​
+onTransfer
+string
+Webhook disparado quando o agente transfere o atendimento para um humano.
+​
+onFirstInteraction
+string
+Webhook disparado automaticamente assim que o primeiro atendimento com o cliente é iniciado.
+​
+onStartInteraction
+string
+Webhook disparado automaticamente sempre que um atendimento com o cliente é iniciado.
+​
+onFinishInteraction
+string
+Webhook disparado automaticamente sempre que um atendimento é finalizado.
+​
+onCreateEvent
+string
+Webhook disparado automaticamente sempre que um agendamento é realizado.
+​
+onCancelEvent
+string
+Webhook disparado automaticamente sempre que um agendamento é cancelado.
+____________________________________________________________________________________
+
+
+Agentes
+Atualizar webhooks
+Atualiza os webhooks de um agente
+PUT
+/
+v2
+/
+agent
+/
+{agentId}
+/
+webhooks
+Try it
+JavaScript
+const options = {
+  method: 'PUT',
+  headers: {Authorization: 'Bearer <token>', 'Content-Type': 'application/json'},
+  body: JSON.stringify({
+    onNewMessage: '<string>',
+    onLackKnowLedge: '<string>',
+    onTransfer: '<string>',
+    onFirstInteraction: '<string>',
+    onStartInteraction: '<string>',
+    onFinishInteraction: '<string>',
+    onCreateEvent: '<string>',
+    onCancelEvent: '<string>'
+  })
+};
+
+
+fetch('https://api.gptmaker.ai/v2/agent/{agentId}/webhooks', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+400
+403
+{
+  "success": true
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+agentId
+stringrequired
+ID do agente
+Body
+application/json
+Configurações do agente a serem atualizadas
+​
+onNewMessage
+string
+Webhook disparado automaticamente sempre que uma nova mensagem chega em um chat.
+​
+onLackKnowLedge
+string
+Webhook disparado quando o agente não sabe responder a uma pergunta.
+​
+onTransfer
+string
+Webhook disparado quando o agente transfere o atendimento para um humano.
+​
+onFirstInteraction
+string
+Webhook disparado automaticamente assim que o primeiro atendimento com o cliente é iniciado.
+​
+onStartInteraction
+string
+Webhook disparado automaticamente sempre que um atendimento com o cliente é iniciado.
+​
+onFinishInteraction
+string
+Webhook disparado automaticamente sempre que um atendimento é finalizado.
+​
+onCreateEvent
+string
+Webhook disparado automaticamente sempre que um agendamento é realizado.
+​
+onCancelEvent
+string
+Webhook disparado automaticamente sempre que um agendamento é cancelado.
+Response
+200
+application/json
+Configurações atualizadas com sucesso
+​
+success
+boolean
+_______________________________________________________________________________________
+
+* 1
+* Option 2
+* Option 3
+​
+contextId
+stringrequired
+ID externo para identificar o cliente
+Example:
+"12345"
+​
+prompt
+stringrequired
+Texto para o agente responder
+Example:
+"oi qual seu nome?"
+​
+callbackUrl
+string
+Caso seja informado, a chamada será assíncrona, quando o agente responder, ele vai chamar esse webhook com a resposta.
+Example:
+"https://webhook.site"
+​
+onFinishCallback
+string
+Caso seja informado, será disparado um webhook sempre que o atendimento for finalizado.
+Example:
+"https://webhook.site"
+​
+chatName
+string
+Você pode informar o nome do cliente caso já possua.
+Example:
+"Fulano"
+​
+chatPicture
+string
+Uma foto do cliente que será mostrada no chat de atendimento.
+Example:
+"https://foto.jpeg"
+​
+phone
+string
+Número de whatsapp do cliente.
+Example:
+"55xxxxxxxx"
+Response
+200
+application/json
+Resposta do agente
+​
+message
+string
+Resposta do agente
+​
+images
+string[]
+URLs das imagens respondidas pelo agente
+​
+audios
+string[]
+URLs dos áudios respondidos pelo agente
+
+
+____________________________________________________________________________________
+
+
+Agentes
+Adicionar contexto
+Permite adicionar uma mensagem ao contexto da conversa, muito usado para quando fizer um disparo ativo por outras ferramentas e precisa adicionar essa mensagem ao contexto da conversa.
+POST
+/
+v2
+/
+agent
+/
+{agentId}
+/
+add-message
+Try it
+JavaScript
+const options = {
+  method: 'POST',
+  headers: {Authorization: 'Bearer <token>', 'Content-Type': 'application/json'},
+  body: JSON.stringify({
+    contextId: '12345',
+    prompt: 'oi você tem interesse no produto x?',
+    role: '<string>'
+  })
+};
+
+
+fetch('https://api.gptmaker.ai/v2/agent/{agentId}/add-message', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+400
+403
+{
+  "message": "<string>",
+  "images": [
+    "<string>"
+  ],
+  "audios": [
+    "<string>"
+  ]
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+agentId
+stringrequired
+ID do agente
+Body
+application/json
+Dados para mensagem a ser adicionada
+* Option 1
+* Option 2
+* Option 3
+​
+contextId
+stringrequired
+ID externo para identificar o cliente
+Example:
+"12345"
+​
+prompt
+stringrequired
+Texto a ser salvo no contexto
+Example:
+"oi você tem interesse no produto x?"
+​
+role
+string
+define se é uma mensagem do usuário ou do agente, 'user' ou 'assistant' default: 'assistant'
+Response
+200
+application/json
+Resposta do agente
+​
+message
+string
+Resposta do agente
+​
+images
+string[]
+URLs das imagens respondidas pelo agente
+​
+audios
+string[]
+URLs dos áudios respondidos pelo agente
+_______________________________________________________________________________________
+
+Agentes
+Listar histórico de comportamento
+Este endpoint retorna a lista de registros do histórico de comportamentos do agente, permitindo consultar as alterações realizadas ao longo do tempo.
+GET
+/
+v2
+/
+agent
+/
+{id}
+/
+list-behavior-history
+Try it
+JavaScript
+const options = {method: 'GET', headers: {Authorization: 'Bearer <token>'}};
+
+
+fetch('https://api.gptmaker.ai/v2/agent/{id}/list-behavior-history', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+403
+500
+{
+  "userLogin": "<string>",
+  "createdAt": 123,
+  "userPicture": "<string>",
+  "id": "<string>",
+  "userName": "<string>",
+  "userId": "<string>",
+  "behaviorText": "<string>"
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+id
+stringrequired
+ID do agente
+Query Parameters
+​
+page
+integerrequired
+Número da página (iniciando em 0)
+Required range: x >= 0
+Example:
+0
+​
+pageSize
+integerrequired
+Quantidade de registros por página
+Required range: x >= 1
+Example:
+10
+Response
+200
+application/json
+Registro de comportamento retornado com sucesso
+​
+userLogin
+stringrequired
+Login (e-mail) do usuário
+​
+createdAt
+integer<int64>required
+Data/hora de criação em timestamp (ms)
+​
+userPicture
+string | nullrequired
+URL da foto do usuário (quando disponível)
+​
+id
+stringrequired
+ID do registro de comportamento
+​
+userName
+stringrequired
+Nome do usuário
+​
+userId
+stringrequired
+ID do usuário
+​
+behaviorText
+stringrequired
+Texto do comportamento
+—-----------------------------------------------------------------------------------------------------------------------------------
+Treinamentos
+Listar treinamentos
+Lista os treinamentos do agente
+GET
+/
+v2
+/
+agent
+/
+{agentId}
+/
+trainings
+Try it
+JavaScript
+const options = {method: 'GET', headers: {Authorization: 'Bearer <token>'}};
+
+
+fetch('https://api.gptmaker.ai/v2/agent/{agentId}/trainings', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+400
+403
+[
+  {
+    "id": "<string>",
+    "type": "TEXT",
+    "text": "<string>",
+    "image": "<string>"
+  }
+]
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+agentId
+stringrequired
+ID do agente
+Query Parameters
+​
+page
+integer<int32>
+Número da página
+​
+pageSize
+integer<int32>
+Tamanho da página
+​
+type
+enum<string>required
+Tipo do treinamento a ser filtrado
+Available options: TEXT, WEBSITE, VIDEO, DOCUMENT
+​
+query
+string
+Filtro para os treinamentos
+Response
+200
+application/json
+Lista de treinamentos
+* Option 1 · object[]
+* Option 2 · object[]
+* Option 3 · object[]
+* Option 4 · object[]
+​
+id
+string
+ID do treinamento
+​
+type
+enum<string>
+Tipo do treinamento
+Available options: TEXT
+​
+text
+string
+Texto do treinamento
+​
+image
+string
+Imagem do treinamento
+—---------------------------------------------------------------------------------------------------------------------------------------------
+Treinamentos
+Criar treinamento
+Adiciona um novo treinamento ao agente
+POST
+/
+v2
+/
+agent
+/
+{agentId}
+/
+trainings
+Try it
+JavaScript
+const options = {
+  method: 'POST',
+  headers: {Authorization: 'Bearer <token>', 'Content-Type': 'application/json'},
+  body: JSON.stringify({type: 'TEXT', text: '<string>', image: '<string>', callbackUrl: '<string>'})
+};
+
+
+fetch('https://api.gptmaker.ai/v2/agent/{agentId}/trainings', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+400
+403
+{
+  "success": true
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+agentId
+stringrequired
+ID do agente
+Body
+application/json
+Dados do treinamento a ser adicionado
+* Texto
+* Website
+* Vídeo
+* Documento
+​
+type
+enum<string>
+Tipo do treinamento deve ser TEXT
+Available options: TEXT
+​
+text
+string
+Texto do treinamento
+​
+image
+string
+URL de uma imagem para o treinamento
+​
+callbackUrl
+string
+URL do webhook para notificação quando o treinamento finaliza com sucesso ou erro (opcional)
+Response
+200
+application/json
+Treinamento adicionado com sucesso
+​
+success
+boolean
+—-----------------------------------------------------------------------------------------------------------------------------------------------
+
+
+Treinamentos
+Atualizar treinamento
+Atualiza um treinamento ao agente. Atualmente só é possível atualizar treinamentos de texto, para os demais treinamentos, é necessário remover e adicionar novamente.
+PUT
+/
+v2
+/
+training
+/
+{trainingId}
+Try it
+JavaScript
+const options = {
+  method: 'PUT',
+  headers: {Authorization: 'Bearer <token>', 'Content-Type': 'application/json'},
+  body: JSON.stringify({type: 'TEXT', text: '<string>', image: '<string>'})
+};
+
+
+fetch('https://api.gptmaker.ai/v2/training/{trainingId}', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+400
+403
+{
+  "success": true
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+trainingId
+stringrequired
+ID do treinamento
+Body
+application/json
+Dados do treinamento a ser adicionado
+​
+type
+enum<string>
+Tipo do treinamento deve ser TEXT
+Available options: TEXT
+​
+text
+string
+Texto atualizado do treinamento
+​
+image
+string
+URL de uma imagem para o treinamento
+Response
+200
+application/json
+Treinamento atualizado com sucesso
+​
+success
+boolean
+______________________________________________________________________________________
+
+
+Treinamentos
+Remover treinamento
+Deleta um treinamento existente
+DELETE
+/
+v2
+/
+training
+/
+{trainingId}
+Try it
+JavaScript
+const options = {method: 'DELETE', headers: {Authorization: 'Bearer <token>'}};
+
+
+fetch('https://api.gptmaker.ai/v2/training/{trainingId}', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+400
+403
+{
+  "success": true
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+trainingId
+stringrequired
+ID do treinamento
+Response
+200
+application/json
+Treinamento deletado com sucesso
+​
+success
+boolean
+________________________________________________________________________________________
+
+
+ções de inatividade
+Listar Ações
+Listar as ações de inatividade
+GET
+/
+v2
+/
+agent
+/
+{agentId}
+/
+idle-actions
+Try it
+JavaScript
+const options = {method: 'GET', headers: {Authorization: 'Bearer <token>'}};
+
+
+fetch('https://api.gptmaker.ai/v2/agent/{agentId}/idle-actions', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+400
+403
+{
+  "actions": [
+    {
+      "id": "<string>",
+      "type": "SEND_MESSAGE",
+      "instructions": "<string>",
+      "workingHours": {
+        "id": "<string>",
+        "tenant": "<string>",
+        "tenantOwner": "<string>",
+        "createdAt": 123,
+        "updatedAt": 123,
+        "active": true,
+        "days": [
+          {
+            "id": "<string>",
+            "tenant": "<string>",
+            "tenantOwner": "<string>",
+            "createdAt": 123,
+            "updatedAt": 123,
+            "active": true,
+            "dayWeek": 123,
+            "hours": [
+              {
+                "id": "<string>",
+                "tenant": "<string>",
+                "tenantOwner": "<string>",
+                "createdAt": 123,
+                "updatedAt": 123,
+                "start": "08:00",
+                "end": "12:00",
+                "sequence": 123
+              }
+            ]
+          }
+        ]
+      },
+      "allowAllHours": true,
+      "seconds": 123
+    }
+  ],
+  "finishOn": {
+    "seconds": 123
+  }
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+agentId
+stringrequired
+Id do agente
+Response
+200
+application/json
+Lista as configurações de ações de inatividade
+​
+actions
+object[]
+Lista de ações configuradas para inatividade
+Show child attributes
+​
+finishOn
+object
+Configuração de tempo para finalizar interação
+Hide child attributes
+​
+finishOn.seconds
+integer
+Tempo total em segundos para finalizar
+Arquivar campo
+Criar Ações
+instagram
+linkedin
+Powered by
+This documentation is built and hosted on Mintlify, a developer documentation platform
+Listar Ações - GPT Maker
+
+_______________________________________________________________________________________
+
+
+Ações de inatividade
+Criar Ações
+Cria uma nova ação de inatividade
+POST
+/
+v2
+/
+agent
+/
+{agentId}
+/
+idle-actions
+Try it
+JavaScript
+const options = {
+  method: 'POST',
+  headers: {Authorization: 'Bearer <token>', 'Content-Type': 'application/json'},
+  body: JSON.stringify({
+    actions: [
+      {
+        instructions: '<string>',
+        seconds: 123,
+        allowAllHours: true,
+        workingHours: [{dayWeek: 123, active: true, hours: [{start: '08:00', end: '12:00'}]}]
+      }
+    ],
+    finishOn: {seconds: 123}
+  })
+};
+
+
+fetch('https://api.gptmaker.ai/v2/agent/{agentId}/idle-actions', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+400
+403
+{
+  "actions": [
+    {
+      "id": "<string>",
+      "type": "SEND_MESSAGE",
+      "instructions": "<string>",
+      "workingHours": {
+        "id": "<string>",
+        "tenant": "<string>",
+        "tenantOwner": "<string>",
+        "createdAt": 123,
+        "updatedAt": 123,
+        "active": true,
+        "days": [
+          {
+            "id": "<string>",
+            "tenant": "<string>",
+            "tenantOwner": "<string>",
+            "createdAt": 123,
+            "updatedAt": 123,
+            "active": true,
+            "dayWeek": 123,
+            "hours": [
+              {
+                "id": "<string>",
+                "tenant": "<string>",
+                "tenantOwner": "<string>",
+                "createdAt": 123,
+                "updatedAt": 123,
+                "start": "08:00",
+                "end": "12:00",
+                "sequence": 123
+              }
+            ]
+          }
+        ]
+      },
+      "allowAllHours": true,
+      "seconds": 123
+    }
+  ],
+  "finishOn": {
+    "seconds": 123
+  }
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+agentId
+stringrequired
+Id do agente
+Body
+application/json
+Configuração de ações de inatividade a ser criada/atualizada
+​
+actions
+object[]
+Show child attributes
+​
+finishOn
+object
+Show child attributes
+Response
+200
+application/json
+Configuração de ações de inatividade criada com sucesso
+​
+actions
+object[]
+Lista de ações configuradas para inatividade
+Show child attributes
+​
+finishOn
+object
+Configuração para finalização automática
+Hide child attributes
+​
+finishOn.seconds
+integer
+Tempo total (s) para finalizar a interação
+Listar Ações
+Atualizar Ações
+instagram
+linkedin
+Powered by
+This documentation is built and hosted on Mintlify, a developer documentation platform
+Criar Ações - GPT Maker
+
+_______________________________________________________________________________________
+
+
+Ações de inatividade
+Atualizar Ações
+Atualizar uma nova ação de inatividade
+PUT
+/
+v2
+/
+agent
+/
+{agentId}
+/
+idle-actions
+Try it
+JavaScript
+const options = {
+  method: 'PUT',
+  headers: {Authorization: 'Bearer <token>', 'Content-Type': 'application/json'},
+  body: JSON.stringify({
+    actions: [
+      {
+        instructions: '<string>',
+        seconds: 123,
+        allowAllHours: true,
+        workingHours: [{dayWeek: 123, active: true, hours: [{start: '08:00', end: '12:00'}]}]
+      }
+    ],
+    finishOn: {seconds: 123}
+  })
+};
+
+
+fetch('https://api.gptmaker.ai/v2/agent/{agentId}/idle-actions', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+400
+403
+{
+  "actions": [
+    {
+      "id": "<string>",
+      "type": "SEND_MESSAGE",
+      "instructions": "<string>",
+      "workingHours": {
+        "id": "<string>",
+        "tenant": "<string>",
+        "tenantOwner": "<string>",
+        "createdAt": 123,
+        "updatedAt": 123,
+        "active": true,
+        "days": [
+          {
+            "id": "<string>",
+            "tenant": "<string>",
+            "tenantOwner": "<string>",
+            "createdAt": 123,
+            "updatedAt": 123,
+            "active": true,
+            "dayWeek": 123,
+            "hours": [
+              {
+                "id": "<string>",
+                "tenant": "<string>",
+                "tenantOwner": "<string>",
+                "createdAt": 123,
+                "updatedAt": 123,
+                "start": "08:00",
+                "end": "12:00",
+                "sequence": 123
+              }
+            ]
+          }
+        ]
+      },
+      "allowAllHours": true,
+      "seconds": 123
+    }
+  ],
+  "finishOn": {
+    "seconds": 123
+  }
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+agentId
+stringrequired
+Id do agente
+Body
+application/json
+Atualização das ações de inatividade do assistente
+​
+actions
+object[]
+Lista de ações configuradas
+Show child attributes
+​
+finishOn
+object
+Tempo para finalizar interação automaticamente
+Show child attributes
+Response
+200
+application/json
+Configuração de ações de inatividade atualizada com sucesso
+​
+actions
+object[]
+Lista de ações configuradas para inatividade
+Show child attributes
+​
+finishOn
+object
+Configuração de tempo total para finalizar automaticamente
+Hide child attributes
+​
+finishOn.seconds
+integer
+Tempo em segundos para finalizar
+Criar Ações
+Deletar Ações
+instagram
+linkedin
+Powered by
+This documentation is built and hosted on Mintlify, a developer documentation platform
+Atualizar Ações - GPT Maker
+
+
+______________________________________________________________________________________
+
+
+Ações de inatividade
+Deletar Ações
+Deleta uma ação existente
+DELETE
+/
+v2
+/
+agent
+/
+{agentId}
+/
+idle-actions
+Try it
+JavaScript
+const options = {method: 'DELETE', headers: {Authorization: 'Bearer <token>'}};
+
+
+fetch('https://api.gptmaker.ai/v2/agent/{agentId}/idle-actions', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+204
+400
+403
+{
+  "success": true
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+agentId
+stringrequired
+ID do agente
+Response
+204
+application/json
+Ação de inatividade deletada com sucesso
+​
+success
+boolean
+______________________________________________________________________________________
+
+
+Regras de transferência
+Listar regras
+Lista as regras de transferência
+GET
+/
+v2
+/
+agent
+/
+{id}
+/
+transfer-rules
+Try it
+JavaScript
+const options = {method: 'GET', headers: {Authorization: 'Bearer <token>'}};
+
+
+fetch('https://api.gptmaker.ai/v2/agent/{id}/transfer-rules', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+400
+403
+{
+  "id": "<string>",
+  "createdAt": "<string>",
+  "instructions": "<string>",
+  "returnOnFinish": true,
+  "type": "HUMAN",
+  "agentId": "<string>",
+  "userId": "<string>"
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+agentId
+stringrequired
+Id do agente
+Response
+200
+application/json
+Lista as regras de transferência
+​
+id
+string
+Id da regra
+​
+createdAt
+string
+data de atualização do campo
+​
+instructions
+string
+Instruções visíveis na transferência
+​
+returnOnFinish
+boolean
+Define se deve retornar ao assistente após o atendimento
+​
+type
+enum<string>
+Available options: HUMAN, AGENT
+​
+agentId
+string | null
+Id do agente de destino (se aplicável)
+​
+userId
+string | null
+Id do usuário de destino (se aplicável)
+_______________________________________________________________________________________
+
+Regras de transferência
+Criar regras
+Cria uma nova regra de transferência para o agente especificado
+POST
+/
+v2
+/
+agent
+/
+{agentId}
+/
+transfer-rules
+Try it
+JavaScript
+const options = {
+  method: 'POST',
+  headers: {Authorization: 'Bearer <token>', 'Content-Type': 'application/json'},
+  body: JSON.stringify({
+    instructions: '<string>',
+    returnOnFinish: true,
+    type: 'HUMAN',
+    userId: '<string>',
+    agentId: '<string>'
+  })
+};
+
+
+fetch('https://api.gptmaker.ai/v2/agent/{agentId}/transfer-rules', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+400
+403
+{
+  "id": "<string>",
+  "createdAt": "<string>",
+  "instructions": "<string>",
+  "returnOnFinish": true,
+  "type": "HUMAN",
+  "agentId": "<string>",
+  "userId": "<string>"
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+agentId
+stringrequired
+Id do agente
+Body
+application/json
+Dados da regra de transferência a ser adicionado
+​
+instructions
+string
+Instruções visíveis na transferência
+​
+returnOnFinish
+boolean
+Define se deve retornar ao assistente após o atendimento
+​
+type
+enum<string>
+Available options: HUMAN, AGENT
+​
+userId
+string | null
+Id do usuário de destino (caso o tipo seja HUMAN)
+​
+agentId
+string | null
+Id do agente de destino (caso o tipo seja AGENT)
+Response
+200
+application/json
+Regra de transferência criada com sucesso
+​
+id
+string
+Id da regra
+​
+createdAt
+string
+data de atualização do campo
+​
+instructions
+string
+Instruções visíveis na transferência
+​
+returnOnFinish
+boolean
+Define se deve retornar ao assistente após o atendimento
+​
+type
+enum<string>
+Available options: HUMAN, AGENT
+​
+agentId
+string | null
+Id do agente de destino (se aplicável)
+​
+userId
+string | null
+Id do usuário de destino (se aplicável)
+
+________________________________________________________________________________________
+Regras de transferência
+Atualizar regra
+Atualiza uma regra de transferência existente
+PUT
+/
+v2
+/
+agent
+/
+{agentId}
+/
+transfer-rules
+/
+{transfer-rule-id}
+Try it
+JavaScript
+const options = {
+  method: 'PUT',
+  headers: {Authorization: 'Bearer <token>', 'Content-Type': 'application/json'},
+  body: JSON.stringify({
+    instructions: '<string>',
+    returnOnFinish: true,
+    type: 'HUMAN',
+    agentId: '<string>',
+    userId: '<string>'
+  })
+};
+
+
+fetch('https://api.gptmaker.ai/v2/agent/{agentId}/transfer-rules/{transfer-rule-id}', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+204
+400
+403
+{
+  "id": "<string>",
+  "createdAt": "<string>",
+  "instructions": "<string>",
+  "returnOnFinish": true,
+  "type": "HUMAN",
+  "agentId": "<string>",
+  "userId": "<string>"
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+agentId
+stringrequired
+ID do agente
+​
+transfer-rule-id
+stringrequired
+ID da regra de transferência
+Body
+application/json
+Dados da regra de transferência a ser atualizada
+​
+instructions
+string
+Instruções visíveis na transferência
+​
+returnOnFinish
+boolean
+Define se deve retornar ao assistente após o atendimento
+​
+type
+enum<string>
+Available options: HUMAN, AGENT
+​
+agentId
+string | null
+Id do agente de destino (se aplicável)
+​
+userId
+string | null
+Id do usuário de destino (se aplicável)
+Response
+204
+application/json
+Regra de transferência atualizada com sucesso
+​
+id
+string
+Id da regra
+​
+createdAt
+string
+Data de criação da regra de transferência
+​
+instructions
+string
+Instruções visíveis na transferência
+​
+returnOnFinish
+boolean
+Define se deve retornar ao assistente após o atendimento
+​
+type
+enum<string>
+Available options: HUMAN, AGENT
+​
+agentId
+string | null
+Id do agente de destino (se aplicável)
+​
+userId
+string | null
+Id do usuário de destino (se aplicável)
+________________________________________________________________________________________
+
+
+Regras de transferência
+Deletar regra
+Deleta uma regra de transferência existente
+DELETE
+/
+v2
+/
+agent
+/
+{agentId}
+/
+transfer-rules
+/
+{transfer-rule-id}
+Try it
+JavaScript
+const options = {method: 'DELETE', headers: {Authorization: 'Bearer <token>'}};
+
+
+fetch('https://api.gptmaker.ai/v2/agent/{agentId}/transfer-rules/{transfer-rule-id}', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+204
+400
+403
+{
+  "success": "<string>"
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+agentId
+stringrequired
+ID do agente
+​
+transfer-rule-id
+stringrequired
+ID da regra de transferência
+Response
+204
+application/json
+Regra de transferência atualizada com sucesso
+​
+success
+string
+Sucesso ao deletar a regra
+________________________________________________________________________________________
+
+
+ntenções
+Listar intenções
+Lista as intenções do agente
+GET
+/
+v2
+/
+agent
+/
+{agentId}
+/
+intentions
+Try it
+JavaScript
+const options = {method: 'GET', headers: {Authorization: 'Bearer <token>'}};
+
+
+fetch('https://api.gptmaker.ai/v2/agent/{agentId}/intentions', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+400
+403
+[
+  {
+    "id": "<string>",
+    "description": "<string>",
+    "instructions": "<string>",
+    "details": "<string>",
+    "fields": [
+      {
+        "name": "<string>",
+        "jsonName": "<string>",
+        "description": "<string>",
+        "type": "STRING",
+        "required": true
+      }
+    ],
+    "type": "WEBHOOK",
+    "httpMethod": "GET",
+    "url": "<string>",
+    "headers": [
+      {
+        "name": "<string>",
+        "value": "<string>"
+      }
+    ],
+    "params": [
+      {
+        "name": "<string>",
+        "value": "<string>"
+      }
+    ],
+    "variables": [
+      {
+        "valueExpression": "<string>",
+        "defaultFieldKey": "<string>",
+        "customField": {
+          "id": "<string>",
+          "name": "<string>",
+          "description": "<string>",
+          "type": "STRING",
+          "jsonName": "<string>"
+        }
+      }
+    ],
+    "requestBody": "<string>",
+    "autoGenerateParams": true,
+    "autoGenerateBody": true
+  }
+]
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+agentId
+stringrequired
+ID do agente
+Query Parameters
+​
+page
+integer<int32>
+Número da página
+​
+pageSize
+integer<int32>
+Tamanho da página
+​
+query
+string
+Filtro pela descrição da intenção
+Response
+200
+application/json
+Lista de intenções
+​
+id
+string
+ID da intenção
+​
+description
+string
+Descrição da intenção
+​
+instructions
+string
+Quando usar a intenção
+​
+details
+string
+Instruções dos dados de saída
+​
+fields
+object[]
+Show child attributes
+​
+type
+enum<string>
+Tipo de intenção
+Available options: WEBHOOK
+​
+httpMethod
+enum<string>
+Método HTTP
+Available options: GET, POST
+​
+url
+string
+URL do webhook
+​
+headers
+object[]
+Show child attributes
+​
+params
+object[]
+Show child attributes
+​
+variables
+object[]
+Show child attributes
+​
+requestBody
+string
+String contendo um JSON que será enviado no corpo da requisição
+​
+autoGenerateParams
+boolean
+Geração automática de parâmetros
+​
+autoGenerateBody
+boolean
+Geração automática do corpo da requisição
+________________________________________________________________________________________
+
+
+Intenções
+Criar intenção
+Adiciona uma nova intenção ao agente
+POST
+/
+v2
+/
+agent
+/
+{agentId}
+/
+intentions
+Try it
+JavaScript
+const options = {
+  method: 'POST',
+  headers: {Authorization: 'Bearer <token>', 'Content-Type': 'application/json'},
+  body: JSON.stringify({
+    description: '<string>',
+    type: 'WEBHOOK',
+    httpMethod: 'GET',
+    url: '<string>',
+    autoGenerateParams: true,
+    autoGenerateBody: true,
+    details: '<string>',
+    instructions: '<string>',
+    fields: [
+      {
+        name: '<string>',
+        jsonName: '<string>',
+        description: '<string>',
+        type: 'STRING',
+        required: true
+      }
+    ],
+    headers: [{name: '<string>', value: '<string>'}],
+    params: [{name: '<string>', value: '<string>'}],
+    variables: [
+      {
+        valueExpression: '<string>',
+        defaultFieldKey: '<string>',
+        customField: {
+          id: '<string>',
+          name: '<string>',
+          description: '<string>',
+          type: 'STRING',
+          jsonName: '<string>'
+        }
+      }
+    ],
+    requestBody: '<string>'
+  })
+};
+
+
+fetch('https://api.gptmaker.ai/v2/agent/{agentId}/intentions', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+400
+403
+{
+  "success": true
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+agentId
+stringrequired
+ID do agente
+Body
+application/json
+Dados da intenção a ser adicionada
+​
+description
+stringrequired
+Descrição da intenção
+​
+type
+enum<string>required
+Tipo de intenção
+Available options: WEBHOOK, INSTRUCTIONS
+​
+httpMethod
+enum<string>required
+Método HTTP
+Available options: GET, POST
+​
+url
+stringrequired
+URL do webhook
+​
+autoGenerateParams
+booleanrequired
+Geração automática de parâmetros
+​
+autoGenerateBody
+booleanrequired
+Geração automática do corpo da requisição
+​
+details
+string
+Detalhamento e instruções de quando o agente deve usar essa intenção.
+​
+instructions
+string
+Instruções para o agente caso o atributo type seja INSTRUCTIONS.
+​
+fields
+object[]
+Show child attributes
+​
+headers
+object[]
+Show child attributes
+​
+params
+object[]
+Show child attributes
+​
+variables
+object[]
+Show child attributes
+​
+requestBody
+string
+String contendo um JSON que será enviado no corpo da requisição
+Response
+200
+application/json
+Intenção adicionada com sucesso
+​
+success
+boolean
+_______________________________________________________________________________________
+
+
+Intenções
+Atualizar intenção
+Atualiza os dados de uma intenção
+PUT
+/
+v2
+/
+intention
+/
+{intentionId}
+Try it
+JavaScript
+const options = {
+  method: 'PUT',
+  headers: {Authorization: 'Bearer <token>', 'Content-Type': 'application/json'},
+  body: JSON.stringify({
+    id: '<string>',
+    description: '<string>',
+    instructions: '<string>',
+    details: '<string>',
+    fields: [
+      {
+        name: '<string>',
+        jsonName: '<string>',
+        description: '<string>',
+        type: 'STRING',
+        required: true
+      }
+    ],
+    type: 'WEBHOOK',
+    httpMethod: 'GET',
+    url: '<string>',
+    headers: [{name: '<string>', value: '<string>'}],
+    params: [{name: '<string>', value: '<string>'}],
+    variables: [
+      {
+        valueExpression: '<string>',
+        defaultFieldKey: '<string>',
+        customField: {
+          id: '<string>',
+          name: '<string>',
+          description: '<string>',
+          type: 'STRING',
+          jsonName: '<string>'
+        }
+      }
+    ],
+    requestBody: '<string>',
+    autoGenerateParams: true,
+    autoGenerateBody: true
+  })
+};
+
+
+fetch('https://api.gptmaker.ai/v2/intention/{intentionId}', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+400
+403
+{
+  "success": true
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+intentionId
+stringrequired
+ID da intenção
+Body
+application/json
+Dados da intenção a ser atualizada
+​
+id
+string
+ID da intenção
+​
+description
+string
+Descrição da intenção
+​
+instructions
+string
+Quando usar a intenção
+​
+details
+string
+Instruções dos dados de saída
+​
+fields
+object[]
+Show child attributes
+​
+type
+enum<string>
+Tipo de intenção
+Available options: WEBHOOK
+​
+httpMethod
+enum<string>
+Método HTTP
+Available options: GET, POST
+​
+url
+string
+URL do webhook
+​
+headers
+object[]
+Show child attributes
+​
+params
+object[]
+Show child attributes
+​
+variables
+object[]
+Show child attributes
+​
+requestBody
+string
+String contendo um JSON que será enviado no corpo da requisição
+​
+autoGenerateParams
+boolean
+Geração automática de parâmetros
+​
+autoGenerateBody
+boolean
+Geração automática do corpo da requisição
+Response
+200
+application/json
+Intenção atualizada com sucesso
+​
+success
+boolean
+________________________________________________________________________________________
+
+
+Intenções
+Remover intenção
+Deleta uma intenção existente
+DELETE
+/
+v2
+/
+intention
+/
+{intentionId}
+Try it
+JavaScript
+const options = {method: 'DELETE', headers: {Authorization: 'Bearer <token>'}};
+
+
+fetch('https://api.gptmaker.ai/v2/intention/{intentionId}', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+400
+403
+{
+  "success": true
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+intentionId
+stringrequired
+ID da intenção
+Response
+200
+application/json
+Intenção deletada com sucesso
+​
+success
+boolean
+_______________________________________________________________________________________
+
+
+hats
+Listar chats
+Lista os chats do workspace
+GET
+/
+v2
+/
+workspace
+/
+{workspaceId}
+/
+chats
+Try it
+JavaScript
+const options = {method: 'GET', headers: {Authorization: 'Bearer <token>'}};
+
+
+fetch('https://api.gptmaker.ai/v2/workspace/{workspaceId}/chats', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+400
+403
+[
+  {
+    "humanTalk": true,
+    "userPicture": "<string>",
+    "messageUserName": "<string>",
+    "read": true,
+    "role": "<string>",
+    "agentName": "<string>",
+    "agentId": "<string>",
+    "whatsappPhone": "<string>",
+    "finished": true,
+    "avatar": "<string>",
+    "title": "<string>",
+    "type": "<string>",
+    "userName": "<string>",
+    "userId": "<string>",
+    "picture": "<string>",
+    "conversationType": "<string>",
+    "createdAt": 123,
+    "name": "<string>",
+    "recipient": "<string>",
+    "id": "<string>",
+    "time": 123,
+    "unReadCount": 123,
+    "conversation": "<string>"
+  }
+]
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+workspaceId
+stringrequired
+ID do workspace
+Query Parameters
+​
+agentId
+string
+ID do agente para filtrar os chats
+​
+page
+integer<int32>
+Número da página
+​
+pageSize
+integer<int32>
+Tamanho da página
+​
+query
+string
+Filtro para o nome do chat
+Response
+200
+application/json
+Lista de chats
+​
+humanTalk
+boolean
+Indica se o chat está no controle de um humano ou do agente.
+​
+userPicture
+string | null
+Imagem do usuário que assumiu o atendimento
+​
+messageUserName
+string | null
+Nome do usuário que enviou a mensagem
+​
+read
+boolean
+Indica se o chat está lido
+​
+role
+string
+Função no chat
+​
+agentName
+string
+Nome do agente
+​
+agentId
+string
+ID do agente
+​
+whatsappPhone
+string
+Número do WhatsApp
+​
+finished
+boolean
+Indica se o chat está finalizado
+​
+avatar
+string
+Avatar do assistente
+​
+title
+string | null
+Título do chat
+​
+type
+string
+Tipo de chat
+​
+userName
+string | null
+Nome do usuário
+​
+userId
+string | null
+ID do usuário
+​
+picture
+string
+Imagem associada ao chat
+​
+conversationType
+string
+Tipo de conversa
+​
+createdAt
+integer
+Data de criação
+​
+name
+string
+Nome do chat
+​
+recipient
+string
+Destinatário do chat
+​
+id
+string
+ID do chat
+​
+time
+integer
+Hora do chat
+​
+unReadCount
+integer
+Contagem de não lidos
+​
+conversation
+string
+Conversa
+
+
+________________________________________________________________________________________
+
+
+Chats
+Deletar chat
+Deletar um chat
+DELETE
+/
+v2
+/
+chat
+/
+{chatId}
+Try it
+JavaScript
+const options = {method: 'DELETE', headers: {Authorization: 'Bearer <token>'}};
+
+
+fetch('https://api.gptmaker.ai/v2/chat/{chatId}', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+400
+403
+{
+  "success": true
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+chatId
+stringrequired
+ID do chat
+Response
+200
+application/json
+Chat removido com sucesso
+​
+success
+boolean
+________________________________________________________________________________________
+
+Chats
+Listar mensagens
+Lista as mensagens de um chat
+GET
+/
+v2
+/
+chat
+/
+{chatId}
+/
+messages
+Try it
+JavaScript
+const options = {method: 'GET', headers: {Authorization: 'Bearer <token>'}};
+
+
+fetch('https://api.gptmaker.ai/v2/chat/{chatId}/messages', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+400
+403
+[
+  {
+    "userPicture": "<string>",
+    "fileName": "<string>",
+    "role": "<string>",
+    "documentUrl": "<string>",
+    "type": "<string>",
+    "userName": "<string>",
+    "midiaContent": "<string>",
+    "userId": "<string>",
+    "audioUrl": "<string>",
+    "imageUrl": "<string>",
+    "width": 123,
+    "id": "<string>",
+    "text": "<string>",
+    "time": 123,
+    "height": 123
+  }
+]
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+chatId
+stringrequired
+ID do chat
+Query Parameters
+​
+page
+integer<int32>
+Número da página
+​
+pageSize
+integer<int32>
+Tamanho da página
+Response
+200
+application/json
+Lista de mensagens
+​
+userPicture
+string | null
+Imagem do usuário
+​
+fileName
+string | null
+Nome do arquivo
+​
+role
+string
+Função no chat
+​
+documentUrl
+string | null
+URL do documento
+​
+type
+string
+Tipo de mensagem
+​
+userName
+string | null
+Nome do usuário
+​
+midiaContent
+string | null
+Conteúdo de mídia
+​
+userId
+string | null
+ID do usuário
+​
+audioUrl
+string | null
+URL do áudio
+​
+imageUrl
+string | null
+URL da imagem
+​
+width
+integer | null
+Largura da imagem
+​
+id
+string
+ID da mensagem
+​
+text
+string
+Texto da mensagem
+​
+time
+integer
+Hora da mensagem
+​
+height
+integer | null
+Altura da imagem
+________________________________________________________________________________________
+
+
+Chats
+Deletar mensagens
+Limpar mensagens
+DELETE
+/
+v2
+/
+chat
+/
+{chatId}
+/
+messages
+Try it
+JavaScript
+const options = {method: 'DELETE', headers: {Authorization: 'Bearer <token>'}};
+
+
+fetch('https://api.gptmaker.ai/v2/chat/{chatId}/messages', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+400
+403
+{
+  "success": true
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+chatId
+stringrequired
+ID do chat
+Response
+200
+application/json
+Mensagens removidas com sucesso
+​
+success
+boolean
+________________________________________________________________________________________
+
+
+Chats
+Assumir atendimento
+Marcar que um humano vai assumir o atendimento, IA para de responder o chat.
+PUT
+/
+v2
+/
+chat
+/
+{chatId}
+/
+start-human
+Try it
+JavaScript
+const options = {method: 'PUT', headers: {Authorization: 'Bearer <token>'}};
+
+
+fetch('https://api.gptmaker.ai/v2/chat/{chatId}/start-human', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+400
+403
+{
+  "success": true
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+chatId
+stringrequired
+ID do chat
+Response
+200
+application/json
+Humano assumiu o atendimento com sucesso
+​
+success
+boolean
+_______________________________________________________________________________________
+
+
+Chats
+Encerrar atendimento
+Encerrar atendimento humano, isso fará que a proxima interação do cliente, o agente volte a responder.
+PUT
+/
+v2
+/
+chat
+/
+{chatId}
+/
+stop-human
+Try it
+JavaScript
+const options = {method: 'PUT', headers: {Authorization: 'Bearer <token>'}};
+
+
+fetch('https://api.gptmaker.ai/v2/chat/{chatId}/stop-human', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+400
+403
+{
+  "success": true
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+chatId
+stringrequired
+ID do chat
+Response
+200
+application/json
+Atendimento encerrado com sucesso
+​
+success
+boolean
+_______________________________________________________________________________________
+
+Chats
+Enviar mensagem
+Envia uma nova mensagem para o chat
+POST
+/
+v2
+/
+chat
+/
+{chatId}
+/
+send-message
+Try it
+JavaScript
+const options = {
+  method: 'POST',
+  headers: {Authorization: 'Bearer <token>', 'Content-Type': 'application/json'},
+  body: JSON.stringify({message: '<string>', replyMessageId: '<string>'})
+};
+
+
+fetch('https://api.gptmaker.ai/v2/chat/{chatId}/send-message', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+400
+403
+{
+  "success": true
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+chatId
+stringrequired
+ID do chat
+Body
+application/json
+Dados da mensagem a ser enviada, caso queira responder uma mensagem envie o 'replyMessageId'.
+* Texto
+* Imagem
+* Áudio
+* Vídeo
+* Documento
+​
+message
+stringrequired
+Mensagem de texto a ser enviada
+​
+replyMessageId
+string
+Mensagem de texto a ser enviada
+Response
+200
+application/json
+Mensagem enviada com sucesso
+​
+success
+boolean
+________________________________________________________________________________________
+
+Chats
+Deletar mensagem
+Remove uma mensagem de um canal específico. Esta funcionalidade está disponível apenas para os canais Z-API, Telegram e Widget.
+DELETE
+/
+v2
+/
+chat
+/
+{chatId}
+/
+message
+/
+{messageId}
+Try it
+JavaScript
+const options = {method: 'DELETE', headers: {Authorization: 'Bearer <token>'}};
+
+
+fetch('https://api.gptmaker.ai/v2/chat/{chatId}/message/{messageId}', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+403
+500
+{
+  "success": true,
+  "status": "This channel allows to delete messages"
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+chatId
+stringrequired
+ID do chat
+​
+messageId
+stringrequired
+ID da mensagem
+Response
+200
+application/json
+Mensagem deletada com sucesso
+​
+success
+boolean
+Indica se a operação foi realizada com sucesso
+Example:
+true
+​
+status
+string
+Mensagem informativa sobre a operação
+Example:
+"This channel allows to delete messages"
+________________________________________________________________________________________
+
+
+Chats
+Editar mensagem
+Edita uma mensagem em um canal específico. Esta funcionalidade está disponível apenas para os canais Z-API, Telegram e Widget, pois nem todos os tipos de canal permitem edição de mensagens.
+PUT
+/
+v2
+/
+chat
+/
+{chatId}
+/
+message
+/
+{messageId}
+Try it
+JavaScript
+const options = {
+  method: 'PUT',
+  headers: {Authorization: 'Bearer <token>', 'Content-Type': 'application/json'},
+  body: JSON.stringify({message: 'Mensagem editada com sucesso!'})
+};
+
+
+fetch('https://api.gptmaker.ai/v2/chat/{chatId}/message/{messageId}', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+403
+500
+{
+  "success": true,
+  "status": "This channel allows to edit messages"
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+chatId
+stringrequired
+ID do chat
+​
+messageId
+stringrequired
+ID da mensagem
+Body
+application/json
+Dados para edição de mensagem
+​
+message
+string
+Novo conteúdo da mensagem
+Example:
+"Mensagem editada com sucesso!"
+Response
+200
+application/json
+Mensagem editada com sucesso
+​
+success
+boolean
+Indica se a operação foi realizada com sucesso
+Example:
+true
+​
+status
+string
+Mensagem informativa sobre a operação
+Example:
+"This channel allows to edit messages"
+________________________________________________________________________________________
+
+
+Workspace
+Lista os workspaces
+Lista os workspaces da conta
+GET
+/
+v2
+/
+workspaces
+Try it
+JavaScript
+const options = {method: 'GET', headers: {Authorization: 'Bearer <token>'}};
+
+
+fetch('https://api.gptmaker.ai/v2/workspaces', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+400
+403
+[
+  {
+    "id": "<string>",
+    "name": "<string>"
+  }
+]
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Response
+200
+application/json
+Lista de workspaces
+​
+id
+string
+ID do workspace
+​
+name
+string
+Nome do workspace
+_____________________________________________________________________________________
+
+
+Atendimentos
+Mensagens do atendimento
+Lista as mensagens de um atendimento especifico, muitos clientes usam dessa API para gerar resumos ou fazer análises sobre o atendimento.
+GET
+/
+v2
+/
+interaction
+/
+{interactionId}
+/
+messages
+Try it
+JavaScript
+const options = {method: 'GET', headers: {Authorization: 'Bearer <token>'}};
+
+
+fetch('https://api.gptmaker.ai/v2/interaction/{interactionId}/messages', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+400
+403
+[
+  {
+    "userPicture": "<string>",
+    "fileName": "<string>",
+    "role": "<string>",
+    "documentUrl": "<string>",
+    "type": "<string>",
+    "userName": "<string>",
+    "midiaContent": "<string>",
+    "userId": "<string>",
+    "audioUrl": "<string>",
+    "imageUrl": "<string>",
+    "width": 123,
+    "id": "<string>",
+    "text": "<string>",
+    "time": 123,
+    "height": 123
+  }
+]
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+interactionId
+stringrequired
+ID do atendimento
+Response
+200
+application/json
+Lista de mensagens
+​
+userPicture
+string | null
+Imagem do usuário
+​
+fileName
+string | null
+Nome do arquivo
+​
+role
+string
+Função no chat
+​
+documentUrl
+string | null
+URL do documento
+​
+type
+string
+Tipo de mensagem
+​
+userName
+string | null
+Nome do usuário
+​
+midiaContent
+string | null
+Conteúdo de mídia
+​
+userId
+string | null
+ID do usuário
+​
+audioUrl
+string | null
+URL do áudio
+​
+imageUrl
+string | null
+URL da imagem
+​
+width
+integer | null
+Largura da imagem
+​
+id
+string
+ID da mensagem
+​
+text
+string
+Texto da mensagem
+​
+time
+integer
+Hora da mensagem
+​
+height
+integer | null
+Altura da imagem
+______________________________________________________________________________________
+
+
+Atendimentos
+Deletar atendimento
+Deleta um atendimento da listagem
+DELETE
+/
+v2
+/
+interaction
+/
+{id}
+Try it
+JavaScript
+const options = {method: 'DELETE', headers: {Authorization: 'Bearer <token>'}};
+
+
+fetch('https://api.gptmaker.ai/v2/interaction/{id}', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+403
+500
+{
+  "deleted": true
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+id
+stringrequired
+ID do atendimento
+Response
+200
+application/json
+Atendimento deletado com sucesso
+​
+deleted
+booleanrequired
+Indica se o atendimento foi deletado com sucesso
+Example:
+true
+_______________________________________________________________________________________
+
+
+Canais
+Listar canais
+Lista os canais de um agente
+GET
+/
+v2
+/
+agent
+/
+{agentId}
+/
+search
+Try it
+JavaScript
+const options = {method: 'GET', headers: {Authorization: 'Bearer <token>'}};
+
+
+fetch('https://api.gptmaker.ai/v2/agent/{agentId}/search', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+400
+403
+{
+  "data": [
+    {
+      "name": "<string>",
+      "type": "WHATSAPP",
+      "id": "<string>",
+      "connected": true
+    }
+  ],
+  "count": 123
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+agentId
+stringrequired
+ID do agente
+Query Parameters
+​
+page
+integer<int32>
+Número da página
+​
+pageSize
+integer<int32>
+Tamanho da página
+​
+query
+string
+Filtro pelo nome do canal
+Response
+200
+application/json
+Lista de canais
+​
+data
+object[]
+Hide child attributes
+​
+data.name
+string
+Nome do canal
+​
+data.type
+enum<string>
+Tipo do canal
+Available options: WHATSAPP, INSTAGRAM, CLOUD_API, TELEGRAM, WIDGET, MESSENGER, MERCADO_LIVRE
+​
+data.id
+string
+ID do canal
+​
+data.connected
+boolean
+Indica se o canal está conectado
+​
+count
+integer
+Número total de canais
+_________________________________________________________________________________________
+
+
+Canais
+Listar canais do workspace
+Este é o endpoint mais atualizado para listagem de canais, onde os canais são gerenciados separadamente dos agentes (desmembrados), refletindo a nova estrutura do sistema.
+GET
+/
+v2
+/
+workspace
+/
+{workspaceId}
+/
+channels
+Try it
+JavaScript
+const options = {method: 'GET', headers: {Authorization: 'Bearer <token>'}};
+
+
+fetch('https://api.gptmaker.ai/v2/workspace/{workspaceId}/channels?page=1&pageSize=25', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+403
+500
+{
+  "data": [
+    {
+      "name": "<string>",
+      "id": "<string>",
+      "type": "Z_API",
+      "agentId": "<string>",
+      "agentPicture": "<string>",
+      "agentName": "<string>",
+      "facebookPageId": "<string>",
+      "connected": true,
+      "username": "<string>"
+    }
+  ],
+  "count": 10
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+workspaceId
+stringrequired
+ID do workspace
+Query Parameters
+​
+page
+integerdefault:1
+Número da página (padrão: 1)
+Required range: x >= 1
+Example:
+1
+​
+pageSize
+integerdefault:25
+Quantidade de itens por página (padrão: 25)
+Required range: x >= 1
+Example:
+25
+​
+query
+stringdefault:""
+Texto para busca/filtragem (padrão: vazio)
+Example:
+""
+​
+agentId
+stringdefault:""
+Filtra pelos canais vinculados a um agente específico (padrão: vazio)
+Example:
+""
+Response
+200
+application/json
+Lista de canais retornada com sucesso
+​
+data
+object[]
+Lista de canais
+Hide child attributes
+​
+data.name
+string
+Nome do canal
+​
+data.id
+string
+ID do canal
+​
+data.type
+enum<string>
+Tipo do canal
+Available options: Z_API, WHATSAPP, INSTAGRAM, CLOUD_API, TELEGRAM, WIDGET, MESSENGER, MERCADO_LIVRE, TWILIO_SMS
+​
+data.agentId
+string | null
+ID do agente vinculado (quando houver)
+​
+data.agentPicture
+string | null
+URL da foto do agente vinculado (quando houver)
+​
+data.agentName
+string | null
+Nome do agente vinculado (quando houver)
+​
+data.facebookPageId
+string | null
+ID da página do Facebook (quando aplicável)
+​
+data.connected
+boolean
+Indica se o canal está conectado
+​
+data.username
+string | null
+Identificador do canal (ex.: telefone/usuário), quando aplicável
+​
+count
+integer
+Quantidade total de canais retornados
+Example:
+10
+_______________________________________________________________________________________
+
+
+Canais
+Criar canal
+Cria um novo canal para o agente
+POST
+/
+v2
+/
+agent
+/
+{agentId}
+/
+create-channel
+Try it
+JavaScript
+const options = {
+  method: 'POST',
+  headers: {Authorization: 'Bearer <token>', 'Content-Type': 'application/json'},
+  body: JSON.stringify({name: '<string>', type: 'WHATSAPP'})
+};
+
+
+fetch('https://api.gptmaker.ai/v2/agent/{agentId}/create-channel', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+400
+403
+{
+  "id": "<string>",
+  "name": "<string>",
+  "type": "WHATSAPP"
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+agentId
+stringrequired
+ID do agente
+Body
+application/json
+Dados do canal a ser criado
+​
+name
+stringrequired
+Nome do canal
+​
+type
+enum<string>required
+Tipo do canal
+Available options: WHATSAPP, INSTAGRAM, CLOUD_API, TELEGRAM, WIDGET, MESSENGER, MERCADO_LIVRE
+Response
+200
+application/json
+Canal criado com sucesso
+​
+id
+string
+ID do canal
+​
+name
+string
+Nome do canal
+​
+type
+enum<string>
+Tipo do canal
+Available options: WHATSAPP, INSTAGRAM, CLOUD_API, TELEGRAM, WIDGET, MESSENGER, MERCADO_LIVRE
+_______________________________________________________________________________________
+
+
+Canais
+Criar canal no workspace
+Endpoint mais atualizado para criação de canais. Permite criar um canal de forma independente, sem necessidade de vinculá-lo a um agente.
+POST
+/
+v2
+/
+workspace
+/
+{workspaceId}
+/
+create-channel
+Try it
+JavaScript
+const options = {
+  method: 'POST',
+  headers: {Authorization: 'Bearer <token>', 'Content-Type': 'application/json'},
+  body: JSON.stringify({name: 'Meu Canal', type: 'Z_API'})
+};
+
+
+fetch('https://api.gptmaker.ai/v2/workspace/{workspaceId}/create-channel', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+403
+500
+{
+  "assistantId": null,
+  "workspace": {
+    "name": "Askia Inoove",
+    "id": "3EB7F3C2BDB85017727802E54CF1568E"
+  },
+  "name": "canal de teste slc doido",
+  "id": "3EC7E989CB4C50C1B8C542CD510C3BFC",
+  "type": "WIDGET"
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+workspaceId
+stringrequired
+ID do workspace
+Body
+application/json
+Dados para criação do canal
+​
+name
+stringrequired
+Nome do canal
+Example:
+"Meu Canal"
+​
+type
+enum<string>
+Tipo do canal
+Available options: Z_API, WHATSAPP, INSTAGRAM, CLOUD_API, TELEGRAM, WIDGET, MESSENGER, MERCADO_LIVRE, TWILIO_SMS
+Response
+200
+application/json
+Canal criado com sucesso
+​
+assistantId
+string | nullrequired
+ID do agente vinculado (quando houver)
+​
+workspace
+objectrequired
+Workspace do canal
+Show child attributes
+​
+name
+stringrequired
+Nome do canal
+​
+id
+stringrequired
+ID do canal
+​
+type
+enum<string>required
+Tipo do canal
+Available options: Z_API, WHATSAPP, INSTAGRAM, CLOUD_API, TELEGRAM, WIDGET, MESSENGER, MERCADO_LIVRE, TWILIO_SMS
+________________________________________________________________________________________
+
+
+Canais
+Remover canal
+Remover canal
+DELETE
+/
+v2
+/
+channel
+/
+{channelId}
+Try it
+JavaScript
+const options = {method: 'DELETE', headers: {Authorization: 'Bearer <token>'}};
+
+
+fetch('https://api.gptmaker.ai/v2/channel/{channelId}', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+403
+500
+{
+  "success": true
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+channelId
+stringrequired
+ID do canal
+Response
+200
+application/json
+Agente removido com sucesso
+​
+success
+boolean
+Indica se o agente foi removido com sucesso
+Example:
+true
+_______________________________________________________________________________________
+
+
+Canais
+Editar canal
+Atualiza as informações do canal, permitindo alterar o nome e vincular (ou trocar) o agente associado ao canal.
+PUT
+/
+v2
+/
+channel
+/
+{channelId}
+Try it
+JavaScript
+const options = {
+  method: 'PUT',
+  headers: {Authorization: 'Bearer <token>', 'Content-Type': 'application/json'},
+  body: JSON.stringify({name: 'Novo nome do canal', agentId: '3EB804183CD300509DF902E54CF1568E'})
+};
+
+
+fetch('https://api.gptmaker.ai/v2/channel/{channelId}', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+403
+500
+{
+  "name": "canal atualizado",
+  "assistantId": "3EB804183CD300509DF902E54CF1568E",
+  "type": "WIDGET",
+  "workspace": {
+    "id": "3EB7F3C2BDB85017727802E54CF1568E",
+    "name": "Askia Inoove"
+  }
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+channelId
+stringrequired
+ID do canal
+Body
+application/json
+Dados para atualização do canal
+​
+name
+stringrequired
+Nome do canal
+Example:
+"Novo nome do canal"
+​
+agentId
+string | null
+ID do agente vinculado ao canal (opcional). Se null/vazio, remove o vínculo com o agente.
+Example:
+"3EB804183CD300509DF902E54CF1568E"
+Response
+200
+application/json
+Canal atualizado com sucesso
+​
+name
+string | null
+Nome do canal
+​
+assistantId
+string | null
+ID do agente vinculado (quando houver)
+​
+type
+string
+Tipo do canal
+​
+workspace
+object
+Workspace do canal
+Hide child attributes
+​
+workspace.id
+string
+ID do workspace
+​
+workspace.name
+string
+Nome do workspace
+Remover canal
+Listar configurações do canal
+instagram
+linkedin
+Powered by
+This documentation is built and hosted on Mintlify, a developer documentation platform
+Editar canal - GPT Maker
+
+________________________________________________________________________________________
+
+Canais
+Listar configurações do canal
+Retorna as configurações de um canal específico a partir do seu ID, permitindo consultar todos os detalhes e parâmetros cadastrados para esse canal.
+GET
+/
+v2
+/
+channel
+/
+{channelId}
+/
+config
+Try it
+JavaScript
+const options = {method: 'GET', headers: {Authorization: 'Bearer <token>'}};
+
+
+fetch('https://api.gptmaker.ai/v2/channel/{channelId}/config', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+403
+500
+{
+  "id": "<string>",
+  "tenant": "<string>",
+  "audioAction": "<string>",
+  "startTrigger": "<string>",
+  "endTrigger": "<string>",
+  "enabledTyping": true,
+  "enableGroupsResponse": true,
+  "replyGroupsType": "<string>",
+  "enablePrivateChatResponse": true,
+  "callRejectAuto": true,
+  "callRejectMessage": "<string>",
+  "takeOutsideService": true,
+  "takeOutsideServiceMember": "<string>",
+  "takeOutsideServiceCommand": "<string>",
+  "takeOutsideServiceMessage": "<string>",
+  "takeOutsideServiceCommandReturn": true,
+  "takeOutsideServiceReturnMessage": "<string>",
+  "waitingMessageEnabled": true,
+  "waitingMessageText": "<string>",
+  "type": "Z_API"
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+channelId
+stringrequired
+ID do canal
+Response
+200
+application/json
+Configurações do canal retornadas com sucesso (os campos variam conforme o tipo do canal)
+* Configuração Z_API
+* Configuração WHATSAPP
+* Configuração INSTAGRAM
+* Configuração básica (TWILIO_SMS, TELEGRAM, MERCADO_LIVRE, MESSENGER)
+​
+id
+string
+ID do canal
+​
+tenant
+string
+Tenant do canal
+​
+audioAction
+string | null
+Configuração de ação de áudio
+​
+startTrigger
+string | null
+Trigger de início
+​
+endTrigger
+string | null
+Trigger de encerramento
+​
+enabledTyping
+boolean | null
+Habilita indicador de 'digitando'
+​
+enableGroupsResponse
+boolean | null
+Habilita respostas em grupos
+​
+replyGroupsType
+string | null
+Tipo de resposta em grupos
+​
+enablePrivateChatResponse
+boolean | null
+Habilita resposta em chat privado
+​
+callRejectAuto
+boolean | null
+Rejeita chamadas automaticamente
+​
+callRejectMessage
+string | null
+Mensagem ao rejeitar chamada
+​
+takeOutsideService
+boolean | null
+Habilita retirar atendimento para fora do serviço
+​
+takeOutsideServiceMember
+string | null
+Membro/usuário alvo da ação
+​
+takeOutsideServiceCommand
+string | null
+Comando utilizado
+​
+takeOutsideServiceMessage
+string | null
+Mensagem utilizada
+​
+takeOutsideServiceCommandReturn
+boolean | null
+Define se deve retornar após executar o comando
+​
+takeOutsideServiceReturnMessage
+string | null
+Mensagem de retorno
+​
+waitingMessageEnabled
+boolean | null
+Habilita mensagem de espera
+​
+waitingMessageText
+string | null
+Texto da mensagem de espera
+​
+type
+enum<string>
+Tipo do canal
+Available options: Z_API
+_______________________________________________________________________________________
+
+Canais
+Atualizar configurações do canal
+Atualiza as configurações de um canal específico
+PUT
+/
+v2
+/
+channel
+/
+{id}
+/
+config
+Try it
+JavaScript
+const options = {
+  method: 'PUT',
+  headers: {Authorization: 'Bearer <token>', 'Content-Type': 'application/json'},
+  body: JSON.stringify({
+    startTrigger: 'ONLY_WHEN_CALLING_BY_NAME',
+    id: '3EC6EAFBBB17505A7EB9E6300696488C',
+    audioAction: 'DISABLED',
+    tenant: '3E753A12D20F50A185E54E911FDCDB1F',
+    endTrigger: 'WHEN_SAY_GOODBYE'
+  })
+};
+
+
+fetch('https://api.gptmaker.ai/v2/channel/{id}/config', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+403
+500
+{
+  "id": "<string>",
+  "tenant": "<string>",
+  "audioAction": "<string>",
+  "startTrigger": "<string>",
+  "endTrigger": "<string>",
+  "enabledTyping": true,
+  "enableGroupsResponse": true,
+  "replyGroupsType": "<string>",
+  "enablePrivateChatResponse": true,
+  "callRejectAuto": true,
+  "callRejectMessage": "<string>",
+  "takeOutsideService": true,
+  "takeOutsideServiceMember": "<string>",
+  "takeOutsideServiceCommand": "<string>",
+  "takeOutsideServiceMessage": "<string>",
+  "takeOutsideServiceCommandReturn": true,
+  "takeOutsideServiceReturnMessage": "<string>",
+  "waitingMessageEnabled": true,
+  "waitingMessageText": "<string>",
+  "type": "Z_API"
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+id
+stringrequired
+ID do canal
+Body
+application/json
+Dados para atualização do canal. Envie apenas as configurações que deseja alterar.
+Campos opcionais: informe somente os atributos que serão atualizados no canal.
+​
+id
+string
+ID do canal
+Example:
+"3EC6EAFBBB17505A7EB9E6300696488C"
+​
+tenant
+string
+Tenant do canal
+Example:
+"3E753A12D20F50A185E54E911FDCDB1F"
+​
+audioAction
+string | null
+Ação de áudio (quando aplicável)
+Example:
+"DISABLED"
+​
+startTrigger
+string | null
+Trigger de início (quando aplicável)
+Example:
+"ONLY_WHEN_CALLING_BY_NAME"
+​
+endTrigger
+string | null
+Trigger de encerramento (quando aplicável)
+Example:
+"WHEN_SAY_GOODBYE"
+Response
+200
+application/json
+Canal atualizado com sucesso (o retorno varia conforme o tipo do canal)
+* Configuração Z_API
+* Configuração WHATSAPP
+* Configuração INSTAGRAM
+* Configuração básica (TWILIO_SMS, TELEGRAM, MERCADO_LIVRE, MESSENGER)
+​
+id
+string
+ID do canal
+​
+tenant
+string
+Tenant do canal
+​
+audioAction
+string | null
+Configuração de ação de áudio
+​
+startTrigger
+string | null
+Trigger de início
+​
+endTrigger
+string | null
+Trigger de encerramento
+​
+enabledTyping
+boolean | null
+Habilita indicador de 'digitando'
+​
+enableGroupsResponse
+boolean | null
+Habilita respostas em grupos
+​
+replyGroupsType
+string | null
+Tipo de resposta em grupos
+​
+enablePrivateChatResponse
+boolean | null
+Habilita resposta em chat privado
+​
+callRejectAuto
+boolean | null
+Rejeita chamadas automaticamente
+​
+callRejectMessage
+string | null
+Mensagem ao rejeitar chamada
+​
+takeOutsideService
+boolean | null
+Habilita retirar atendimento para fora do serviço
+​
+takeOutsideServiceMember
+string | null
+Membro/usuário alvo da ação
+​
+takeOutsideServiceCommand
+string | null
+Comando utilizado
+​
+takeOutsideServiceMessage
+string | null
+Mensagem utilizada
+​
+takeOutsideServiceCommandReturn
+boolean | null
+Define se deve retornar após executar o comando
+​
+takeOutsideServiceReturnMessage
+string | null
+Mensagem de retorno
+​
+waitingMessageEnabled
+boolean | null
+Habilita mensagem de espera
+​
+waitingMessageText
+string | null
+Texto da mensagem de espera
+​
+type
+enum<string>
+Tipo do canal
+Available options: Z_API
+________________________________________________________________________________________
+
+
+Whatsapp
+Iniciar conversa
+Iniciar conversa
+POST
+/
+v2
+/
+channel
+/
+{channelId}
+/
+start-conversation
+Try it
+JavaScript
+const options = {
+  method: 'POST',
+  headers: {Authorization: 'Bearer <token>', 'Content-Type': 'application/json'},
+  body: JSON.stringify({phone: '<string>', message: '<string>'})
+};
+
+
+fetch('https://api.gptmaker.ai/v2/channel/{channelId}/start-conversation', options)
+  .then(res => res.json())
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
+200
+400
+403
+{
+  "success": true
+}
+Documentation Index
+Fetch the complete documentation index at: https://developer.gptmaker.ai/llms.txt
+Use this file to discover all available pages before exploring further.
+Authorizations
+​
+Authorization
+stringheaderrequired
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+Path Parameters
+​
+channelId
+stringrequired
+ID do canal
+Body
+application/json
+Dados da mensagem a ser disparada, atualmente iniciar a conversa só está disponível para canais do tipo Whatsapp não oficial.
+* Mensagem de Texto
+* Imagem
+* Vídeo
+* Áudio
+* Documento
+​
+phone
+stringrequired
+Número de telefone do destinatário
+​
+message
+stringrequired
+Mensagem de texto a ser enviada
+Response
+200
+application/json
+Mensagem enviada com sucesso
+​
+success
+boolean
+_____________________________________________________________________________________

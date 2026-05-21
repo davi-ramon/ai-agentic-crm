@@ -26,15 +26,16 @@
 // ── DEFAULTS DE CONFIGURAÇÃO ─────────────────────────────────
 var MON_DEFAULTS = {
   // Limites de alerta por etapa (número de leads acima do qual alerta)
-  mon_alerta_conferir_pecas:    '80',
-  mon_alerta_orcamento_enviado: '50',
-  mon_alerta_follow_up:         '40',
-  mon_alerta_global:            '200',  // total geral
-  // Limites críticos (aciona autopreservação)
-  mon_critico_conferir_pecas:   '150',
-  mon_critico_orcamento_enviado:'100',
-  mon_critico_follow_up:        '80',
-  mon_critico_global:           '350',
+  // Calibrados para um pipeline real com ~480 registros ativos
+  mon_alerta_conferir_pecas:    '300',
+  mon_alerta_orcamento_enviado: '150',
+  mon_alerta_follow_up:         '120',
+  mon_alerta_global:            '400',  // total geral
+  // Limites críticos (aciona autopreservação — só em situação realmente grave)
+  mon_critico_conferir_pecas:   '500',
+  mon_critico_orcamento_enviado:'250',
+  mon_critico_follow_up:        '200',
+  mon_critico_global:           '700',
   // Comportamento
   mon_ativo:                   'true',
   mon_autopreservacao_ativa:   'false', // flag de runtime
@@ -153,6 +154,13 @@ function verificarAutopreservacao() {
 
 /** Ativa autopreservação internamente — salva flag E pausa o agente no GPT Maker */
 function _ativarAutopreservacaoInterna(motivo) {
+  // Guarda duplicada: se já está ativa não toca a API nem re-salva
+  var cfg = _getMonConfig();
+  if (String(cfg.mon_autopreservacao_ativa).toLowerCase() === 'true') {
+    Logger.log('[MONITOR] Autopreservação já ativa. Nenhuma ação duplicada.');
+    return;
+  }
+
   salvarConfig('mon_autopreservacao_ativa', 'true');
   salvarConfig('mon_autopreservacao_motivo', String(motivo).substring(0, 500));
   Logger.log('[MONITOR] 🔴 AUTOPRESERVAÇÃO ATIVADA: ' + motivo);
