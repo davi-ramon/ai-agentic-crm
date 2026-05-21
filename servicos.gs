@@ -495,3 +495,95 @@ function gptMakerIniciarConversa(phone, message) {
     message: String(message),
   });
 }
+
+// ──────────────────────────────────────────────────────────────
+//  HEALTH CHECK — Verifica saúde de todos os serviços integrados
+//  Chamado no boot do front-end para alertar o operador
+// ──────────────────────────────────────────────────────────────
+
+/**
+ * Faz um diagnóstico completo do sistema no boot do app.
+ * Retorna { ok: bool, resultados: [ { servico, ok, status?, erro? } ] }
+ * Chamada pelo frontend logo após login (de forma assíncrona, sem bloquear UI).
+ */
+function verificarSaudeCompleta(authToken) {
+  requireAuth(authToken, 'operador');
+  var res = [];
+
+  // ── 1. Google Sheets ──────────────────────────────────────
+  try {
+    var ss = getSpreadsheet();
+    var abas = ss.getSheets().map(function(s){ return s.getName(); });
+    res.push({ servico: 'Google Sheets', ok: true, status: abas.length + ' abas (' + abas.join(', ') + ')' });
+  } catch(e) {
+    res.push({ servico: 'Google Sheets', ok: false, erro: e.message });
+  }
+
+  // ── 2. GPT Maker — status do agente ──────────────────────
+  try {
+    if (!CONFIG.GPTMAKER_AGENT_ID || CONFIG.GPTMAKER_AGENT_ID.indexOf('YOUR_') > -1) {
+      res.push({ servico: 'GPT Maker IA', ok: false, erro: 'GPTMAKER_AGENT_ID não configurado em config.gs' });
+    } else if (!CONFIG.GPTMAKER_API_KEY || CONFIG.GPTMAKER_API_KEY.indexOf('YOUR_') > -1) {
+      res.push({ servico: 'GPT Maker IA', ok: false, erro: 'GPTMAKER_API_KEY não configurado em config.gs' });
+    } else {
+      var agente = gptMakerGetAgente();
+      var ativo  = agente && String(agente.status || '').toUpperCase() !== 'INACTIVE';
+      res.push({
+        servico: 'GPT Maker IA',
+        ok: true,
+        status: ativo ? 'ativo' : 'INATIVO',
+        agente_ativo: ativo,
+        agente_nome: String(agente.name || agente.agentName || ''),
+      });
+    }
+  } catch(e) {
+    res.push({ servico: 'GPT Maker IA', ok: false, erro: e.message });
+  }
+
+  // ── 3. GPT Maker — treinamentos ──────────────────────────
+  try {
+    if (!CONFIG.GPTMAKER_AGENT_ID || CONFIG.GPTMAKER_AGENT_ID.indexOf('YOUR_') > -1) {
+      res.push({ servico: 'GPT Maker Treinamentos', ok: false, erro: 'AGENT_ID não configurado' });
+    } else {
+      var treins = gptMakerBuscarTreinamentos('', 5);
+      res.push({ servico: 'GPT Maker Treinamentos', ok: true, status: (Array.isArray(treins) ? treins.length : 0) + ' treinamentos encontrados' });
+    }
+  } catch(e) {
+    res.push({ servico: 'GPT Maker Treinamentos', ok: false, erro: e.message });
+  }
+
+  // ── 4. Telegram ──────────────────────────────────────────
+  try {
+    var tg = getTelegramConfig_();
+    if (!tg.botToken || tg.botToken.indexOf('YOUR_') > -1) {
+      res.push({ servico: 'Telegram', ok: false, erro: 'TELEGRAM_BOT_TOKEN não configurado em config.gs' });
+    } else {
+      var resp = UrlFetchApp.fetch('https://api.telegram.org/bot' + tg.botToken + '/getMe', { muteHttpExceptions: true });
+      var tgRes = JSON.parse(resp.getContentText());
+      res.push({
+        servico: 'Telegram',
+        ok: tgRes.ok === true,
+        status: tgRes.ok ? '@' + (tgRes.result.username || '?') + ' conectado' : 'Token inválido',
+      });
+    }
+  } catch(e) {
+    res.push({ servico: 'Telegram', ok: false, erro: e.message });
+  }
+
+  // ── 5. PDV sheet ─────────────────────────────────────────
+  try {
+    var pdvSh = getSpreadsheet().getSheetByName('PDV');
+    if (!pdvSh) {
+      res.push({ servico: 'PDV', ok: false, erro: 'Aba "PDV" não encontrada na planilha. Cadastre o primeiro produto para criá-la.' });
+    } else {
+      var rows = pdvSh.getLastRow() - 1; // exclui cabeçalho
+      res.push({ servico: 'PDV', ok: true, status: Math.max(0, rows) + ' produto(s) cadastrado(s)', total: Math.max(0, rows) });
+    }
+  } catch(e) {
+    res.push({ servico: 'PDV', ok: false, erro: e.message });
+  }
+
+  var tudo_ok = res.every(function(r){ return r.ok; });
+  Logger.log('[HEALTH] ' + (tudo_ok ? '✅ Tudo ok.' : '⚠️ Problemas encontrados.') + ' ' + JSON.stringify(res));
+  return { ok: tudo_ok, resultados: res };
+}

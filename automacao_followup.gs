@@ -296,6 +296,27 @@ function _garantirSheetTracking_() {
   return sh;
 }
 
+/**
+ * Retorna um resumo das últimas mensagens de um chat como string de contexto.
+ * Usado quando followup_usar_contexto = true.
+ * @param {string} chatId
+ * @returns {string} Contexto textual das últimas mensagens
+ */
+function _getContextoConversa(chatId) {
+  try {
+    var msgs = gptMakerGetMensagens(chatId, 10);
+    if (!Array.isArray(msgs) || msgs.length === 0) return '';
+    return msgs.slice(-5).map(function(m) {
+      var role = String(m.role || m.type || 'user').toLowerCase();
+      var text = String(m.content || m.message || m.text || '').substring(0, 200);
+      return (role === 'user' || role === 'client' ? 'Cliente' : 'IA') + ': ' + text;
+    }).join('\n');
+  } catch(e) {
+    Logger.log('[FOLLOWUP] _getContextoConversa erro: ' + e.message);
+    return '';
+  }
+}
+
 /** Lê configs de follow-up */
 function _getFUConfig() {
   var cfg = getConfigs();

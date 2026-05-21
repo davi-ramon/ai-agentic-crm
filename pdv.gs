@@ -338,7 +338,9 @@ function _toFloat(v) {
  * Mostra: nome real da aba, total de linhas, cabeçalhos, primeiros registros,
  * e testa a API do GPT Maker (busca treinamentos existentes).
  */
-function diagnosticarPDV() {
+function diagnosticarPDV(authToken) {
+  // Permite chamar do editor (sem token) ou do frontend (com token operador)
+  if (authToken) requireAuth(authToken, 'operador');
   var ss = getSpreadsheet();
   var resultado = {
     spreadsheetId:   ss.getId(),

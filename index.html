@@ -2842,6 +2842,9 @@ function quickActK(acao, protocolo, btn, event) {
    DRAG & DROP KANBAN
    ════════════════════════════════════════════════════ */
 var _drag=null, _dproto='', _dsrc='', _ph=null;
+// Suprime autoRefresh enquanto há um save de drag pendente (evita rebuild antes de confirmar)
+var _dragPendingUntil = 0;
+
 function kStart(e,card,proto,stage){ _drag=card; _dproto=proto; _dsrc=stage; card.classList.add('dragging'); e.dataTransfer.effectAllowed='move'; }
 function kOver(e,el){
   e.preventDefault(); e.dataTransfer.dropEffect='move';
@@ -2858,18 +2861,31 @@ function kDrop(e,el,tgt){
   var col=el.closest('.kcol'); col.classList.remove('drag-over');
   if(_ph&&_ph.parentNode) _ph.parentNode.removeChild(_ph); _ph=null;
   if(!_drag||tgt===_dsrc) return;
+  // Move visualmente de imediato — server call é assíncrona abaixo
   _drag.classList.remove('dragging'); _drag.classList.add('dropped');
   var a=afterEl(el,e.clientY); if(a) el.insertBefore(_drag,a); else el.appendChild(_drag);
   updKCnts();
   var dc=_drag; setTimeout(function(){ dc.classList.remove('dropped'); },380);
   var proto=_dproto, ns=tgt;
   S.crm.forEach(function(r){ if(String(r.protocolo)===String(proto)) r.status=ns; });
+  // Marca card como "salvando" (feedback visual sem bloquear UI)
+  dc.style.opacity='0.6';
+  dc.title='Salvando...';
+  // Bloqueia autoRefresh por 25s para evitar rebuild antes do save confirmar
+  _dragPendingUntil = Date.now() + 25000;
   google.script.run
     .withSuccessHandler(function(res){
+      dc.style.opacity=''; dc.title='';
+      _dragPendingUntil = 0;
       if(res&&res.ok) toast('Movido para "'+(SM[ns]?SM[ns].label:ns)+'"','ok');
       else LOG.warn('kDrop','Update falhou: '+JSON.stringify(res));
     })
-    .withFailureHandler(function(e){ LOG.error('kDrop','Falha ao mover card',e); toast('Erro ao mover: '+e.message,'erro'); })
+    .withFailureHandler(function(e){
+      dc.style.opacity=''; dc.title='';
+      _dragPendingUntil = 0;
+      LOG.error('kDrop','Falha ao mover card',e);
+      toast('Erro ao mover: '+e.message,'erro');
+    })
     .atualizarStatusCRM(proto, ns, S.authToken);
   _drag=null;
 }
@@ -3147,6 +3163,11 @@ var _lastAct = Date.now();
 var _refreshTimer = setInterval(function() {
   if (!S.authToken) return;
   pollPushEvents();
+  // Não recarrega enquanto um drag está sendo salvo (evita rebuild que desfaz move visual)
+  if (Date.now() < _dragPendingUntil) {
+    LOG.info('autoRefresh', 'Drag pendente — adiando refresh por ' + Math.round((_dragPendingUntil - Date.now())/1000) + 's');
+    return;
+  }
   var idleMs = Date.now() - _lastAct;
   var badge = document.getElementById('auto-badge');
   if (idleMs < 300000) { // ativo nos últimos 5 minutos
@@ -3193,11 +3214,11 @@ function bTs(s){
 /* ════════════════════════════════════════════════════
    TOAST
    ════════════════════════════════════════════════════ */
-function toast(msg, type) {
+function toast(msg, type, durMs) {
   var w=document.getElementById('tw'), t=document.createElement('div');
   t.className='toast t-'+(type==='ok'?'ok':type==='erro'?'er':'in');
   t.textContent=msg; w.appendChild(t);
-  setTimeout(function(){ if(t.parentNode) t.parentNode.removeChild(t); },4300);
+  setTimeout(function(){ if(t.parentNode) t.parentNode.removeChild(t); }, durMs||4300);
 }
 
 /* ════════════════════════════════════════════════════
@@ -3789,6 +3810,9 @@ window.addEventListener('DOMContentLoaded', function() {
 
   // Verifica autopreservação ao iniciar
   verificarStatusAutopreservacao();
+
+  // Health check de serviços — roda 4s após boot para não bloquear carregamento inicial
+  setTimeout(function() { iniciarHealthCheck(); }, 4000);
 });
 
 /* ════════════════════════════════════════════════════
@@ -3819,7 +3843,11 @@ function renderPDV(produtos) {
   var grid = document.getElementById('pdv-grid');
   if (!grid) return;
   if (!produtos || !produtos.length) {
-    grid.innerHTML = '<div style="padding:60px;text-align:center;color:var(--txt3);font-size:.85rem;grid-column:1/-1">Nenhum produto cadastrado.<br><br><button class="cfg-save" style="margin:0" onclick="abrirPanelPDV(null)">＋ Cadastrar primeiro produto</button></div>';
+    grid.innerHTML = '<div style="padding:60px;text-align:center;color:var(--txt3);font-size:.85rem;grid-column:1/-1">'
+      + 'Nenhum produto no catálogo.<br><br>'
+      + '<button class="cfg-save" style="margin:0 8px 0 0" onclick="abrirPanelPDV(null)">＋ Cadastrar primeiro produto</button>'
+      + '<button class="cfg-save" style="margin:0;background:var(--bg2);color:var(--txt2);border:1px solid var(--bdr)" onclick="diagnosticarPDVUI()" title="Verificar por que não aparecem produtos">'
+      + '🔍 Diagnosticar</button></div>';
     return;
   }
   grid.innerHTML = produtos.map(function(p) {
@@ -3967,6 +3995,38 @@ function excluirProdutoPDVUI() {
     .excluirProdutoPDV(id, S.authToken);
 }
 
+/**
+ * Diagnóstico do PDV — chamado pelo botão "🔍 Diagnosticar" quando 0 produtos.
+ * Exibe um alert com o resultado do diagnóstico para identificar o problema.
+ */
+function diagnosticarPDVUI() {
+  toast('Diagnosticando PDV...', 'info');
+  google.script.run
+    .withSuccessHandler(function(r) {
+      if (!r) { toast('Diagnóstico não retornou dados.', 'erro'); return; }
+      var linhas = [
+        '── DIAGNÓSTICO PDV ──',
+        'Planilha: ' + (r.spreadsheetName || '?') + ' [' + (r.spreadsheetId || '?') + ']',
+        'Abas existentes: ' + (r.abas ? r.abas.join(', ') : '?'),
+        'Aba PDV: ' + (r.pdvSheet || 'NÃO ENCONTRADA'),
+        'Total de linhas na aba PDV: ' + (r.totalLinhas || 0),
+        'Cabeçalhos: ' + (r.cabecalhos ? JSON.stringify(r.cabecalhos.slice(0,5)) : '—'),
+        '─────────────────────',
+        'Primeiros registros: ' + (r.primeirosRegistros && r.primeirosRegistros.length > 0
+          ? r.primeirosRegistros.map(function(p){ return p.id + ' — ' + p.nome; }).join(' | ')
+          : '(nenhum)'),
+        '─────────────────────',
+        'GPT Maker: ' + (r.gptMaker ? (r.gptMaker.ok ? 'OK — ' + r.gptMaker.treinamentosEncontrados + ' treins' : 'ERRO: ' + r.gptMaker.erro) : '—'),
+      ];
+      alert(linhas.join('\n'));
+      LOG.data('diagnosticarPDV', 'resultado', r);
+    })
+    .withFailureHandler(function(e) {
+      toast('Erro no diagnóstico: ' + e.message, 'erro');
+    })
+    .diagnosticarPDV(S.authToken);
+}
+
 /* ════════════════════════════════════════════════════
    FOLLOW-UP AUTOMÁTICO — CONFIG UI
    ════════════════════════════════════════════════════ */
@@ -4018,6 +4078,57 @@ document.addEventListener('DOMContentLoaded', function() {
   var fp = document.getElementById('fu-prompt');
   if (fp) fp.addEventListener('input', atualizarContadorPrompt);
 });
+
+/* ════════════════════════════════════════════════════
+   HEALTH CHECK — Verificação de saúde de serviços no boot
+   ════════════════════════════════════════════════════ */
+/**
+ * Chamado 4s após o boot. Consulta todos os serviços integrados
+ * e exibe toasts para cada falha encontrada.
+ * Se tudo OK → nenhum toast (operação silenciosa).
+ */
+function iniciarHealthCheck() {
+  if (!S.authToken) return;
+  LOG.info('healthCheck', 'Iniciando verificação de saúde dos serviços...');
+  google.script.run
+    .withSuccessHandler(function(r) {
+      if (!r || !r.resultados) return;
+      var falhas = r.resultados.filter(function(s){ return !s.ok; });
+      var avisos = [];
+
+      r.resultados.forEach(function(s) {
+        if (!s.ok) {
+          var msg = '⚠️ ' + s.servico + ': ' + (s.erro || 'falha');
+          LOG.warn('healthCheck', msg);
+          // Delay escalonado para não empilhar toasts ao mesmo tempo
+          avisos.push(msg);
+        } else {
+          LOG.ok('healthCheck', s.servico + ' → ' + (s.status || 'ok'));
+        }
+      });
+
+      // Exibe toasts com 1.5s de intervalo para não sobrepor
+      avisos.forEach(function(msg, i) {
+        setTimeout(function(){ toast(msg, 'erro', 8000); }, i * 1600);
+      });
+
+      // Checa se agente GPT Maker está INATIVO (mas sem autopreservação — pode ter sido desligado manualmente)
+      var gptRes = r.resultados.find(function(s){ return s.servico === 'GPT Maker IA'; });
+      if (gptRes && gptRes.ok && gptRes.agente_ativo === false) {
+        setTimeout(function() {
+          toast('⚠️ Thaynan IA está INATIVO no GPT Maker. Ative via painel de Configurações.', 'warn', 10000);
+        }, (avisos.length + 1) * 1600);
+      }
+
+      if (falhas.length === 0) {
+        LOG.ok('healthCheck', '✅ Todos os serviços operacionais.');
+      }
+    })
+    .withFailureHandler(function(e) {
+      LOG.warn('healthCheck', 'Falha no health check: ' + e.message);
+    })
+    .verificarSaudeCompleta(S.authToken);
+}
 
 /* ════════════════════════════════════════════════════
    MONITORAMENTO + AUTOPRESERVAÇÃO — UI
