@@ -151,16 +151,38 @@ function verificarAutopreservacao() {
   return { ativa: ativa, motivo: String(cfg.mon_autopreservacao_motivo || '') };
 }
 
-/** Ativa autopreservação internamente */
+/** Ativa autopreservação internamente — salva flag E pausa o agente no GPT Maker */
 function _ativarAutopreservacaoInterna(motivo) {
   salvarConfig('mon_autopreservacao_ativa', 'true');
   salvarConfig('mon_autopreservacao_motivo', String(motivo).substring(0, 500));
   Logger.log('[MONITOR] 🔴 AUTOPRESERVAÇÃO ATIVADA: ' + motivo);
+
+  // ── Pausa o agente real no GPT Maker ──────────────────────
+  try {
+    gptMakerInativarAgente();
+    Logger.log('[MONITOR] ✓ Agente GPT Maker inativado via API.');
+  } catch (e) {
+    Logger.log('[MONITOR] ERRO ao inativar agente GPT Maker: ' + e.message);
+    // Não interrompe o fluxo — a flag no Sheets já bloqueia novos leads
+  }
 }
 
-/** Desativa autopreservação (requer ação manual do admin) */
+/**
+ * Desativa autopreservação (requer ação manual do admin).
+ * Reativa o agente no GPT Maker E limpa a flag no Sheets.
+ */
 function desativarAutopreservacao(authToken) {
   requireAuth(authToken, 'admin');
+
+  // ── Reativa o agente no GPT Maker primeiro ────────────────
+  try {
+    gptMakerAtivarAgente();
+    Logger.log('[MONITOR] ✓ Agente GPT Maker reativado via API.');
+  } catch (e) {
+    Logger.log('[MONITOR] ERRO ao reativar agente GPT Maker: ' + e.message);
+    // Prossegue mesmo com erro — admin pode reativar manualmente no painel GPT Maker
+  }
+
   salvarConfig('mon_autopreservacao_ativa', 'false');
   salvarConfig('mon_autopreservacao_motivo', '');
   registrarLog('autopreservacao_desativada', 'ok', {}, '', { acao: 'desativar_autopreservacao' });
@@ -257,6 +279,44 @@ function salvarMonitoramentoConfig(dados, authToken) {
   });
   registrarLog('config_monitoramento', 'ok', dados, '', { usuario: sessao.email, acao: 'salvar_config_monitoramento' });
   return { ok: true };
+}
+
+/**
+ * Diagnóstico: retorna status real do agente no GPT Maker + flag local.
+ * Execute no editor do Apps Script para verificar inconsistências.
+ */
+function diagnosticarAutopreservacao() {
+  var cfg = _getMonConfig();
+  var flagLocal = String(cfg.mon_autopreservacao_motivo || '');
+  var ativaLocal = String(cfg.mon_autopreservacao_ativa).toLowerCase() === 'true';
+
+  var statusGPT = null;
+  try {
+    statusGPT = gptMakerGetAgente();
+  } catch (e) {
+    statusGPT = { erro: e.message };
+  }
+
+  var resultado = {
+    flag_local_ativa:   ativaLocal,
+    motivo_local:       flagLocal,
+    agente_gpt_maker:   statusGPT,
+  };
+
+  Logger.log('[DIAGNÓSTICO AUTOPRESERVAÇÃO] ' + JSON.stringify(resultado));
+  return resultado;
+}
+
+/**
+ * Limpa a flag de autopreservação SEM chamar a API (emergência).
+ * Use se o agente GPT Maker já está ativo mas o banner continua aparecendo.
+ * Execute diretamente no editor do Apps Script (não requer authToken).
+ */
+function limparFlagAutopreservacaoEmergencia() {
+  salvarConfig('mon_autopreservacao_ativa', 'false');
+  salvarConfig('mon_autopreservacao_motivo', '');
+  Logger.log('[MONITOR] ⚡ Flag de autopreservação limpa (emergência). Agente GPT Maker não foi tocado.');
+  return { ok: true, aviso: 'Flag limpa. Confirme manualmente que o agente está ativo no GPT Maker.' };
 }
 
 /** Cria o trigger periódico para monitoramento (execute 1x manualmente) */

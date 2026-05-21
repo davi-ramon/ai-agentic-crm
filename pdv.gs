@@ -162,44 +162,54 @@ function excluirProdutoPDV(id, authToken) {
 }
 
 // ──────────────────────────────────────────────────────────────
-//  SINCRONIZAÇÃO COM MEMÓRIA DO THAYNAN IA (GPT Maker)
+//  SINCRONIZAÇÃO COM TREINAMENTO DO THAYNAN IA (GPT Maker)
 // ──────────────────────────────────────────────────────────────
+//
+//  ⚠️  ENDPOINT CORRETO (API v2):
+//    Criar  : POST   /agent/{agentId}/trainings   body: { type:'TEXT', text:'...' }
+//    Buscar : GET    /agent/{agentId}/trainings?type=TEXT&query=[PDV-ID:xxx]
+//    Atualiz: PUT    /training/{trainingId}        body: { type:'TEXT', text:'...' }
+//    Remover: DELETE /training/{trainingId}
+//
+//  POST /trainings NÃO retorna o ID criado (retorna apenas {success:true}).
+//  Solução: cada produto emite um marcador único '[PDV-ID:{id}]' no início
+//  do texto, e após criar fazemos uma busca por esse marcador para
+//  obter o trainingId e guardá-lo na planilha.
 
 /**
- * Sincroniza produto com a memória da IA via GPT Maker API.
+ * Sincroniza produto com a base de treinamento da IA.
  *
- * Endpoint (GPT Maker v2):
- *  POST /workspace/{wid}/agent/{aid}/memory   → criar
- *  PUT  /workspace/{wid}/agent/{aid}/memory/{memoriaId} → atualizar
- *  DELETE /workspace/{wid}/agent/{aid}/memory/{memoriaId} → remover
- *
- * Estrutura esperada do body:
- *  { "title": "...", "content": "..." }
- *
- * ⚠️  Se o endpoint mudar, atualize apenas as 3 funções abaixo.
+ * @param {Object} produto            - Dados do produto PDV
+ * @param {string} trainingIdExistente - ID do treinamento anterior (vazio se novo)
+ * @param {string} acao               - 'criar' | 'atualizar'
+ * @returns {string} trainingId armazenado no GPT Maker
  */
+function _sincronizarComIA(produto, trainingIdExistente, acao) {
+  var conteudo = _gerarConteudoMemoria(produto); // já inclui [PDV-ID:xxx]
 
-function _sincronizarComIA(produto, memoriaIdExistente, acao) {
-  var conteudo = _gerarConteudoMemoria(produto);
-  var titulo   = '[PDV] ' + String(produto.nome || 'Produto').substring(0, 100);
-  var base     = '/workspace/' + CONFIG.GPTMAKER_WORKSPACE_ID + '/agent/' + CONFIG.GPTMAKER_AGENT_ID + '/memory';
-
-  if (acao === 'criar' || !memoriaIdExistente) {
-    var resp = chamarGPTMaker('POST', base, { title: titulo, content: conteudo });
-    var novoId = (resp && (resp.id || resp._id || (resp.data && resp.data.id))) || '';
-    Logger.log('[PDV] Memória criada na IA. ID: ' + novoId);
+  if (acao === 'criar' || !trainingIdExistente) {
+    // ── CRIAR ────────────────────────────────────────────────
+    gptMakerCriarTreinamento(conteudo);
+    // POST retorna {success:true} sem ID — buscamos pelo marcador único
+    Utilities.sleep(800); // aguarda indexação
+    var novoId = _buscarTrainingIdPorProdutoId(produto.id);
+    Logger.log('[PDV] Treinamento criado na IA. trainingId: ' + novoId);
     return novoId;
+
   } else {
-    // Tenta atualizar; se falhar com 404, recria
+    // ── ATUALIZAR ────────────────────────────────────────────
     try {
-      chamarGPTMaker('PUT', base + '/' + memoriaIdExistente, { title: titulo, content: conteudo });
-      Logger.log('[PDV] Memória atualizada na IA. ID: ' + memoriaIdExistente);
-      return memoriaIdExistente;
+      gptMakerAtualizarTreinamento(trainingIdExistente, conteudo);
+      Logger.log('[PDV] Treinamento atualizado na IA. trainingId: ' + trainingIdExistente);
+      return trainingIdExistente;
     } catch (e) {
       if (e.message && e.message.indexOf('404') > -1) {
-        Logger.log('[PDV] Memória ' + memoriaIdExistente + ' não encontrada. Recriando...');
-        var respR = chamarGPTMaker('POST', base, { title: titulo, content: conteudo });
-        var recriadoId = (respR && (respR.id || respR._id || (respR.data && respR.data.id))) || '';
+        // Treinamento sumiu — recria
+        Logger.log('[PDV] Treinamento ' + trainingIdExistente + ' não encontrado. Recriando...');
+        gptMakerCriarTreinamento(conteudo);
+        Utilities.sleep(800);
+        var recriadoId = _buscarTrainingIdPorProdutoId(produto.id);
+        Logger.log('[PDV] Treinamento recriado. trainingId: ' + recriadoId);
         return recriadoId;
       }
       throw e;
@@ -207,16 +217,32 @@ function _sincronizarComIA(produto, memoriaIdExistente, acao) {
   }
 }
 
-function _removerDaIA(memoriaId) {
-  var endpoint = '/workspace/' + CONFIG.GPTMAKER_WORKSPACE_ID + '/agent/' + CONFIG.GPTMAKER_AGENT_ID + '/memory/' + memoriaId;
-  try {
-    chamarGPTMaker('DELETE', endpoint, null);
-    Logger.log('[PDV] Memória removida da IA. ID: ' + memoriaId);
-  } catch (e) {
-    // 404 = já não existe, ok
-    if (e.message && e.message.indexOf('404') > -1) return;
-    throw e;
+/**
+ * Remove treinamento da IA usando o trainingId armazenado.
+ * @param {string} trainingId
+ */
+function _removerDaIA(trainingId) {
+  gptMakerRemoverTreinamento(trainingId);
+  Logger.log('[PDV] Treinamento removido da IA. trainingId: ' + trainingId);
+}
+
+/**
+ * Busca o trainingId de um produto pelo marcador '[PDV-ID:{produtoId}]'
+ * embutido no texto do treinamento.
+ * Retorna string vazia se não encontrado.
+ * @param {string} produtoId
+ * @returns {string}
+ */
+function _buscarTrainingIdPorProdutoId(produtoId) {
+  var marcador = '[PDV-ID:' + produtoId + ']';
+  var lista    = gptMakerBuscarTreinamentos(marcador, 10);
+  for (var i = 0; i < lista.length; i++) {
+    if (lista[i].text && lista[i].text.indexOf(marcador) > -1) {
+      return String(lista[i].id || '');
+    }
   }
+  Logger.log('[PDV] AVISO: Treinamento com marcador "' + marcador + '" não encontrado na busca.');
+  return '';
 }
 
 /**
@@ -225,6 +251,8 @@ function _removerDaIA(memoriaId) {
  */
 function _gerarConteudoMemoria(p) {
   var linhas = [
+    // Marcador único para localizar este treinamento via API (não remover)
+    '[PDV-ID:' + p.id + ']',
     'PRODUTO: ' + (p.nome || ''),
     'CATEGORIA: ' + (p.categoria || ''),
     'MARCA: ' + (p.marca || ''),

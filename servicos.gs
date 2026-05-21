@@ -303,3 +303,195 @@ function getTelegramConfig_() {
     chatId: String(configs.chat_id || CONFIG.TELEGRAM_GROUP_ID || '').trim(),
   };
 }
+
+// ──────────────────────────────────────────────────────────────
+//  AGENTE — ATIVAR / INATIVAR
+//  PUT /agent/{agentId}/active
+//  PUT /agent/{agentId}/inactive
+// ──────────────────────────────────────────────────────────────
+
+/**
+ * Ativa o agente no GPT Maker (remove pausa, volta a responder).
+ * Chamado ao desativar autopreservação.
+ */
+function gptMakerAtivarAgente() {
+  Logger.log('[GPTMAKER] Ativando agente ' + CONFIG.GPTMAKER_AGENT_ID);
+  return chamarGPTMaker('PUT', '/agent/' + CONFIG.GPTMAKER_AGENT_ID + '/active', null);
+}
+
+/**
+ * Inativa o agente no GPT Maker (pausa respostas, IA para de atender).
+ * Chamado ao ativar autopreservação.
+ */
+function gptMakerInativarAgente() {
+  Logger.log('[GPTMAKER] Inativando agente ' + CONFIG.GPTMAKER_AGENT_ID);
+  return chamarGPTMaker('PUT', '/agent/' + CONFIG.GPTMAKER_AGENT_ID + '/inactive', null);
+}
+
+/**
+ * Busca dados e status atual do agente.
+ * Útil para confirmar se está ativo/inativo antes de agir.
+ * GET /agent/{agentId}
+ */
+function gptMakerGetAgente() {
+  Logger.log('[GPTMAKER] Buscando dados do agente ' + CONFIG.GPTMAKER_AGENT_ID);
+  return chamarGPTMaker('GET', '/agent/' + CONFIG.GPTMAKER_AGENT_ID, null);
+}
+
+// ──────────────────────────────────────────────────────────────
+//  TREINAMENTOS — CRUD COMPLETO
+//  POST   /agent/{agentId}/trainings        → criar
+//  GET    /agent/{agentId}/trainings        → listar / buscar
+//  PUT    /training/{trainingId}            → atualizar (só TEXT)
+//  DELETE /training/{trainingId}            → remover
+// ──────────────────────────────────────────────────────────────
+
+/**
+ * Cria um novo treinamento de texto no agente.
+ * @param {string} texto       - Conteúdo do treinamento
+ * @param {string} callbackUrl - (opcional) webhook para notificar quando pronto
+ * @returns {Object} { success: true }
+ */
+function gptMakerCriarTreinamento(texto, callbackUrl) {
+  Logger.log('[GPTMAKER] Criando treinamento → agente: ' + CONFIG.GPTMAKER_AGENT_ID);
+  var body = { type: 'TEXT', text: String(texto) };
+  if (callbackUrl) body.callbackUrl = callbackUrl;
+  return chamarGPTMaker('POST', '/agent/' + CONFIG.GPTMAKER_AGENT_ID + '/trainings', body);
+}
+
+/**
+ * Lista / busca treinamentos do agente.
+ * Use o parâmetro query para buscar por trecho do texto (ex: '[PDV-ID:PDV-123]').
+ * @param {string} query    - Filtro de texto (opcional)
+ * @param {number} pageSize - Resultados por página (padrão: 20)
+ * @returns {Array} Lista de { id, type, text, image }
+ */
+function gptMakerBuscarTreinamentos(query, pageSize) {
+  var qs = '?type=TEXT&pageSize=' + (pageSize || 20);
+  if (query) qs += '&query=' + encodeURIComponent(String(query));
+  Logger.log('[GPTMAKER] Buscando treinamentos → query: ' + (query || '(all)'));
+  var resp = chamarGPTMaker('GET', '/agent/' + CONFIG.GPTMAKER_AGENT_ID + '/trainings' + qs, null);
+  if (Array.isArray(resp))               return resp;
+  if (resp && Array.isArray(resp.data))  return resp.data;
+  if (resp && Array.isArray(resp.items)) return resp.items;
+  return [];
+}
+
+/**
+ * Atualiza o texto de um treinamento existente (somente tipo TEXT).
+ * @param {string} trainingId - ID do treinamento no GPT Maker
+ * @param {string} texto      - Novo conteúdo
+ * @returns {Object} { success: true }
+ */
+function gptMakerAtualizarTreinamento(trainingId, texto) {
+  Logger.log('[GPTMAKER] Atualizando treinamento ' + trainingId);
+  return chamarGPTMaker('PUT', '/training/' + trainingId, { type: 'TEXT', text: String(texto) });
+}
+
+/**
+ * Remove um treinamento do agente.
+ * Ignora 404 (já removido = ok).
+ * @param {string} trainingId - ID do treinamento
+ */
+function gptMakerRemoverTreinamento(trainingId) {
+  Logger.log('[GPTMAKER] Removendo treinamento ' + trainingId);
+  try {
+    return chamarGPTMaker('DELETE', '/training/' + trainingId, null);
+  } catch (e) {
+    if (e.message && e.message.indexOf('404') > -1) {
+      Logger.log('[GPTMAKER] Treinamento ' + trainingId + ' já removido (404 ignorado).');
+      return { success: true };
+    }
+    throw e;
+  }
+}
+
+// ──────────────────────────────────────────────────────────────
+//  CONFIGURAÇÕES DO AGENTE
+//  GET /agent/{agentId}/settings
+//  PUT /agent/{agentId}/settings
+// ──────────────────────────────────────────────────────────────
+
+/**
+ * Retorna as configurações atuais do agente (modelo LLM, emojis, limites, etc.).
+ */
+function gptMakerGetConfiguracoes() {
+  Logger.log('[GPTMAKER] Buscando configurações do agente ' + CONFIG.GPTMAKER_AGENT_ID);
+  return chamarGPTMaker('GET', '/agent/' + CONFIG.GPTMAKER_AGENT_ID + '/settings', null);
+}
+
+/**
+ * Atualiza configurações do agente.
+ * Envie apenas os campos que deseja alterar.
+ * @param {Object} config - Ex: { prefferModel: 'GPT_4_O', enabledEmoji: false }
+ */
+function gptMakerAtualizarConfiguracoes(config) {
+  Logger.log('[GPTMAKER] Atualizando configurações do agente ' + CONFIG.GPTMAKER_AGENT_ID);
+  return chamarGPTMaker('PUT', '/agent/' + CONFIG.GPTMAKER_AGENT_ID + '/settings', config);
+}
+
+// ──────────────────────────────────────────────────────────────
+//  WEBHOOKS DO AGENTE
+//  GET /agent/{agentId}/webhooks
+//  PUT /agent/{agentId}/webhooks
+// ──────────────────────────────────────────────────────────────
+
+/**
+ * Retorna os webhooks configurados no agente.
+ * Eventos: onNewMessage, onTransfer, onFirstInteraction, onFinishInteraction, etc.
+ */
+function gptMakerGetWebhooks() {
+  Logger.log('[GPTMAKER] Buscando webhooks do agente ' + CONFIG.GPTMAKER_AGENT_ID);
+  return chamarGPTMaker('GET', '/agent/' + CONFIG.GPTMAKER_AGENT_ID + '/webhooks', null);
+}
+
+/**
+ * Atualiza webhooks do agente.
+ * @param {Object} webhooks - Ex: { onNewMessage: 'https://...', onTransfer: 'https://...' }
+ */
+function gptMakerAtualizarWebhooks(webhooks) {
+  Logger.log('[GPTMAKER] Atualizando webhooks do agente ' + CONFIG.GPTMAKER_AGENT_ID);
+  return chamarGPTMaker('PUT', '/agent/' + CONFIG.GPTMAKER_AGENT_ID + '/webhooks', webhooks);
+}
+
+// ──────────────────────────────────────────────────────────────
+//  ADICIONAR MENSAGEM AO CONTEXTO (disparo ativo / follow-up via IA)
+//  POST /agent/{agentId}/add-message
+// ──────────────────────────────────────────────────────────────
+
+/**
+ * Injeta uma mensagem no contexto do LLM para um cliente específico.
+ * Útil para disparos ativos: adiciona o contexto de que uma mensagem
+ * foi enviada, para que a IA saiba responder em continuidade.
+ *
+ * @param {string} contextId - ID externo do cliente (ex: número de WhatsApp ou chatId)
+ * @param {string} prompt    - Texto da mensagem
+ * @param {string} role      - 'user' (mensagem do cliente) ou 'assistant' (mensagem da IA)
+ */
+function gptMakerAdicionarContexto(contextId, prompt, role) {
+  Logger.log('[GPTMAKER] Adicionando contexto → contextId: ' + contextId + ' | role: ' + (role || 'assistant'));
+  return chamarGPTMaker('POST', '/agent/' + CONFIG.GPTMAKER_AGENT_ID + '/add-message', {
+    contextId: String(contextId),
+    prompt:    String(prompt),
+    role:      role || 'assistant',
+  });
+}
+
+// ──────────────────────────────────────────────────────────────
+//  INICIAR CONVERSA ATIVA (canal WhatsApp)
+//  POST /v2/channel/{channelId}/start-conversation
+// ──────────────────────────────────────────────────────────────
+
+/**
+ * Inicia uma conversa ativa pelo canal WhatsApp configurado.
+ * Útil para disparos proativos (ex: follow-up via canal, não via chat existente).
+ * @param {string} phone   - Número no formato internacional: 5599...
+ * @param {string} message - Mensagem inicial
+ */
+function gptMakerIniciarConversa(phone, message) {
+  Logger.log('[GPTMAKER] Iniciando conversa ativa → phone: ' + phone);
+  return chamarGPTMaker('POST', '/channel/' + CONFIG.GPTMAKER_CHANNEL_ID + '/start-conversation', {
+    phone:   String(phone),
+    message: String(message),
+  });
+}
