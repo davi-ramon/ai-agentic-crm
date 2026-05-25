@@ -304,6 +304,48 @@ function requireAuth(authToken, requiredRole) {
   return _requireSession_(authToken, requiredRole || 'operador');
 }
 
+/**
+ * Remove todas as sessões auth_session_* expiradas do Script Properties.
+ * Sessões ainda válidas são mantidas intactas.
+ * Requer perfil admin.
+ */
+function limparSessoesAntigas(authToken) {
+  _requireSession_(authToken, 'admin');
+  var props = _getScriptProperties_();
+  var all   = props.getProperties();
+  var prefix = AUTH_CONFIG.SESSION_PREFIX;
+  var agora  = Date.now();
+  var deletados = 0;
+  var mantidos  = 0;
+
+  Object.keys(all).forEach(function(key) {
+    if (key.indexOf(prefix) !== 0) return; // ignora outras chaves
+    var deletar = false;
+    try {
+      var data = JSON.parse(all[key]);
+      if (!data.expiresAt || new Date(data.expiresAt).getTime() < agora) {
+        deletar = true;
+      }
+    } catch (_) {
+      deletar = true; // JSON malformado → remove
+    }
+    if (deletar) {
+      props.deleteProperty(key);
+      deletados++;
+    } else {
+      mantidos++;
+    }
+  });
+
+  Logger.log('[AUTH][limparSessoesAntigas] ' + deletados + ' sessão(ões) expirada(s) removida(s), ' + mantidos + ' sessão(ões) ativa(s) mantida(s).');
+  registrarLog('auditoria', 'ok',
+    { deletados: deletados, mantidos: mantidos },
+    '',
+    { usuario: 'admin', acao: 'limpar_sessoes_antigas' }
+  );
+  return { ok: true, deletados: deletados, mantidos: mantidos };
+}
+
 function _requireSession_(authToken, requiredRole) {
   var sessao = _getSession_(authToken);
   if (!sessao) throw new Error('Sessao invalida ou expirada. Faca login novamente.');

@@ -331,6 +331,16 @@ function _getFUConfig() {
 //  FUNÇÕES SERVER-SIDE (chamadas pelo frontend)
 // ──────────────────────────────────────────────────────────────
 
+/**
+ * Executa o follow-up automático manualmente a partir do front-end.
+ * Requer perfil admin. Retorna resultado detalhado para auditoria na UI.
+ */
+function executarFollowUpManual(authToken) {
+  requireAuth(authToken, 'admin');
+  Logger.log('[FOLLOWUP] Execução manual solicitada via front-end.');
+  return executarFollowUpAutomatico();
+}
+
 /** Retorna a configuração de follow-up para o frontend */
 function getFollowUpConfig(authToken) {
   requireAuth(authToken, 'admin');

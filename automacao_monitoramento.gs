@@ -25,23 +25,28 @@
 
 // ── DEFAULTS DE CONFIGURAÇÃO ─────────────────────────────────
 var MON_DEFAULTS = {
-  // Limites de alerta por etapa (número de leads acima do qual alerta)
-  // Calibrados para um pipeline real com ~480 registros ativos
+  // ── Etapas monitoradas (configuráveis via front-end) ─────────
+  // Slugs exatamente como aparecem na coluna Status da planilha
+  // (espaços → underscores, minúsculas)
+  mon_etapa_1: 'conferir_pecas',      // etapa principal — ativa autopreservação
+  mon_etapa_2: 'orcamento_enviado',
+  mon_etapa_3: 'follow_up',
+  // ── Limites de alerta por etapa ──────────────────────────────
   mon_alerta_conferir_pecas:    '300',
   mon_alerta_orcamento_enviado: '150',
   mon_alerta_follow_up:         '120',
-  mon_alerta_global:            '400',  // total geral
-  // Limites críticos (aciona autopreservação — só em situação realmente grave)
+  mon_alerta_global:            '400',
+  // ── Limites críticos (aciona autopreservação) ─────────────────
   mon_critico_conferir_pecas:   '500',
   mon_critico_orcamento_enviado:'250',
   mon_critico_follow_up:        '200',
   mon_critico_global:           '700',
-  // Comportamento
+  // ── Comportamento ─────────────────────────────────────────────
   mon_ativo:                   'true',
-  mon_autopreservacao_ativa:   'false', // flag de runtime
+  mon_autopreservacao_ativa:   'false',
   mon_autopreservacao_motivo:  '',
-  mon_intervalo_alerta_horas:  '4',    // renotifica a cada N horas
-  mon_ultimo_alerta:           '',     // timestamp do último alerta enviado
+  mon_intervalo_alerta_horas:  '4',
+  mon_ultimo_alerta:           '',
 };
 
 // ──────────────────────────────────────────────────────────────
@@ -77,19 +82,28 @@ function monitorarFunil() {
   var alertas   = [];
   var criticos  = [];
 
-  // Verifica limites por etapa
+  // Verifica limites por etapa — usando slugs configurados via front-end
+  var _slug = function(v) { return String(v||'').toLowerCase().replace(/[\s\-]+/g,'_'); };
   var etapas = [
-    { id: 'conferir_pecas',    label: '🔍 Conferir Peças',    alerta: 'mon_alerta_conferir_pecas',    critico: 'mon_critico_conferir_pecas'    },
-    { id: 'orcamento_enviado', label: '📤 Orçamento Enviado', alerta: 'mon_alerta_orcamento_enviado', critico: 'mon_critico_orcamento_enviado' },
-    { id: 'follow_up',         label: '🔄 Follow-up',         alerta: 'mon_alerta_follow_up',         critico: 'mon_critico_follow_up'         },
+    { id: _slug(cfg.mon_etapa_1 || 'conferir_pecas'),    label: _labelEtapa_(cfg.mon_etapa_1 || 'conferir_pecas'),    alerta: 'mon_alerta_conferir_pecas',    critico: 'mon_critico_conferir_pecas',    principal: true  },
+    { id: _slug(cfg.mon_etapa_2 || 'orcamento_enviado'), label: _labelEtapa_(cfg.mon_etapa_2 || 'orcamento_enviado'), alerta: 'mon_alerta_orcamento_enviado', critico: 'mon_critico_orcamento_enviado', principal: false },
+    { id: _slug(cfg.mon_etapa_3 || 'follow_up'),         label: _labelEtapa_(cfg.mon_etapa_3 || 'follow_up'),         alerta: 'mon_alerta_follow_up',         critico: 'mon_critico_follow_up',         principal: false },
   ];
 
   etapas.forEach(function(e) {
-    var count    = contagens[e.id] || 0;
+    var count     = contagens[e.id] || 0;
     var limAlerta = parseInt(cfg[e.alerta])  || 999;
     var limCrit   = parseInt(cfg[e.critico]) || 999;
-    if (count >= limCrit)  criticos.push(e.label + ': ' + count + ' leads (crítico ≥' + limCrit + ')');
-    else if (count >= limAlerta) alertas.push(e.label + ': ' + count + ' leads (alerta ≥' + limAlerta + ')');
+    if (count >= limCrit) {
+      // Autopreservação só é ativada pela etapa principal (etapa 1)
+      if (e.principal) {
+        criticos.push(e.label + ': ' + count + ' leads (crítico ≥' + limCrit + ')');
+      } else {
+        alertas.push(e.label + ': ' + count + ' leads (crítico ≥' + limCrit + ' — apenas alerta)');
+      }
+    } else if (count >= limAlerta) {
+      alertas.push(e.label + ': ' + count + ' leads (alerta ≥' + limAlerta + ')');
+    }
   });
 
   // Verifica total global
@@ -259,14 +273,52 @@ function _getMonConfig() {
   return out;
 }
 
+/**
+ * Converte um slug de etapa em label legível.
+ * @param {string} slug  Ex: 'conferir_pecas' ou 'Conferir Peças'
+ * @returns {string}
+ */
+function _labelEtapa_(slug) {
+  var MAP = {
+    'conferir_pecas':    '🔍 Conferir Peças',
+    'orcamento_enviado': '📤 Orçamento Enviado',
+    'follow_up':         '🔄 Follow-up',
+    'venda_fechada':     '✅ Venda Fechada',
+    'perdido':           '❌ Perdido',
+    'sem_resposta':      '🔕 Sem Resposta',
+  };
+  var key = String(slug || '').toLowerCase().replace(/[\s\-]+/g, '_');
+  return MAP[key] || ('📋 ' + key.replace(/_/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); }));
+}
+
 // ──────────────────────────────────────────────────────────────
 //  FUNÇÕES SERVER-SIDE (frontend)
 // ──────────────────────────────────────────────────────────────
+
+/**
+ * Executa o ciclo completo de monitoramento manualmente (via front-end).
+ * Retorna resultado detalhado para exibição na UI.
+ */
+function executarMonitoramentoManual(authToken) {
+  requireAuth(authToken, 'admin');
+  return monitorarFunil();
+}
+
+/**
+ * Versão pública de limparFlagAutopreservacaoEmergencia — requer admin.
+ * Remove apenas a flag local SEM chamar a API GPT Maker.
+ * Use quando o agente já está ativo mas o banner continua aparecendo.
+ */
+function limparFlagAutopreservacaoFrontend(authToken) {
+  requireAuth(authToken, 'admin');
+  return limparFlagAutopreservacaoEmergencia();
+}
 
 function getMonitoramentoStatus(authToken) {
   requireAuth(authToken, 'operador');
   var cfg       = _getMonConfig();
   var contagens = _contarLeadsPorEtapa();
+  var _slug     = function(v) { return String(v||'').toLowerCase().replace(/[\s\-]+/g,'_'); };
   return {
     autopreservacao: {
       ativa:  String(cfg.mon_autopreservacao_ativa).toLowerCase() === 'true',
@@ -274,6 +326,15 @@ function getMonitoramentoStatus(authToken) {
     },
     contagens: contagens,
     config:    cfg,
+    // Labels das etapas configuradas — útil para exibir na UI
+    etapas_labels: {
+      etapa_1: _labelEtapa_(cfg.mon_etapa_1 || 'conferir_pecas'),
+      etapa_2: _labelEtapa_(cfg.mon_etapa_2 || 'orcamento_enviado'),
+      etapa_3: _labelEtapa_(cfg.mon_etapa_3 || 'follow_up'),
+      slug_1:  _slug(cfg.mon_etapa_1 || 'conferir_pecas'),
+      slug_2:  _slug(cfg.mon_etapa_2 || 'orcamento_enviado'),
+      slug_3:  _slug(cfg.mon_etapa_3 || 'follow_up'),
+    },
   };
 }
 

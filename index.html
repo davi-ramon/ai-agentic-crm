@@ -825,10 +825,11 @@ body.auth-locked #auth-screen{display:flex;}
   </div>
 
   <!-- BANNER DE AUTOPRESERVAÇÃO (oculto por padrão) -->
-  <div id="ap-banner" style="display:none;background:#DC2626;color:#fff;padding:12px 22px;font-size:.8rem;font-weight:700;display:flex;align-items:center;gap:12px;flex-shrink:0;">
+  <div id="ap-banner" style="display:none;background:#DC2626;color:#fff;padding:12px 22px;font-size:.8rem;font-weight:700;display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap;">
     <span style="font-size:1.1rem">🚨</span>
-    <span style="flex:1" id="ap-banner-txt">IA PAUSADA — Pipeline sobrecarregado. Atualize o CRM para reativar.</span>
-    <button onclick="desativarAutopreservacaoUI()" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;padding:5px 14px;border-radius:6px;font-size:.74rem;font-weight:700;cursor:pointer;font-family:var(--f)">Reativar IA</button>
+    <span style="flex:1;min-width:180px" id="ap-banner-txt">IA PAUSADA — Pipeline sobrecarregado. Atualize o CRM para reativar.</span>
+    <button onclick="desativarAutopreservacaoUI()" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;padding:5px 14px;border-radius:6px;font-size:.74rem;font-weight:700;cursor:pointer;font-family:var(--f)">✅ Reativar IA</button>
+    <button onclick="limparFlagMonitoramentoUI()" title="Remove apenas a flag local sem chamar a API do GPT Maker. Use se o banner aparece mesmo com pipeline limpo." style="background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.25);color:#fff;padding:5px 12px;border-radius:6px;font-size:.72rem;font-weight:600;cursor:pointer;font-family:var(--f)">🔓 Limpar Flag</button>
   </div>
 
   <!-- PAGE: DASHBOARD -->
@@ -1251,9 +1252,10 @@ body.auth-locked #auth-screen{display:flex;}
         <span id="cfg-gm-channel-src" style="font-size:.65rem;color:var(--txt3);margin-top:2px;display:block"></span>
       </div>
 
-      <!-- Testar conexão -->
-      <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
-        <button onclick="testarConexaoGPTMaker()" class="cfg-save" style="margin-top:0;padding:8px 18px;background:var(--royal)">⚡ Testar Conexão</button>
+      <!-- Botões: Salvar + Testar -->
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+        <button onclick="salvarIntegracaoUI()" class="cfg-save" style="margin-top:0;padding:8px 18px">💾 Salvar Integração</button>
+        <button onclick="testarConexaoGPTMaker()" class="cfg-save" style="margin-top:0;padding:8px 18px;background:var(--royal)">⚡ Salvar &amp; Testar Conexão</button>
         <span id="cfg-gm-test-status" style="font-size:.78rem;color:var(--txt2)"></span>
       </div>
 
@@ -1293,9 +1295,23 @@ body.auth-locked #auth-screen{display:flex;}
       <p style="font-size:.7rem;color:var(--txt3);margin-top:10px;">
         ⚙️ Configure o trigger periódico: <code>criarTriggerFollowUp()</code> no Apps Script Editor (executa a cada hora).
       </p>
-      <div style="margin-top:14px;display:flex;align-items:center;gap:8px;">
+      <div style="margin-top:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
         <button class="cfg-save" onclick="salvarConfigFollowUp()"><span data-icon="save"></span>Salvar Follow-up</button>
+        <button class="cfg-save" onclick="executarFollowUpAgora()" style="background:var(--royal)">▶️ Executar Agora</button>
+        <button class="cfg-save" onclick="verTrackingFollowUp()" style="background:var(--sf2);color:var(--royal);border:1px solid var(--bd)">📋 Ver Tracking</button>
         <span class="cfg-status" id="fu-save-status"></span>
+      </div>
+
+      <!-- Resultado de execução manual -->
+      <div id="fu-exec-resultado" style="display:none;margin-top:12px;padding:12px 14px;border-radius:8px;background:var(--sf2);border:1px solid var(--bd);font-size:.76rem;line-height:1.7;"></div>
+
+      <!-- Tracking table -->
+      <div id="fu-tracking-area" style="display:none;margin-top:16px;border-top:1px solid var(--bd);padding-top:14px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <span style="font-size:.72rem;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em;">📋 Tracking de Follow-up</span>
+          <button onclick="carregarTrackingFollowUp()" style="font-size:.7rem;padding:4px 10px;border-radius:6px;border:1px solid var(--bd);background:var(--sf2);cursor:pointer;color:var(--royal)">🔄 Atualizar</button>
+        </div>
+        <div id="fu-tracking-table" style="overflow-x:auto;font-size:.73rem;"></div>
       </div>
     </div>
 
@@ -1309,6 +1325,27 @@ body.auth-locked #auth-screen{display:flex;}
         <input type="checkbox" id="mon-ativo">
         Ativar monitoramento automático de pipeline
       </label>
+
+      <!-- Etapas monitoradas configuráveis -->
+      <p style="font-size:.72rem;color:var(--txt2);font-weight:600;margin-bottom:6px;">
+        ⚙️ Etapas Monitoradas
+        <small style="font-weight:400;color:var(--txt3)"> — slug da coluna Status da planilha (ex: <code>conferir_pecas</code>)</small>
+      </p>
+      <div class="cfg-grid-2" style="margin-bottom:14px;">
+        <div>
+          <span class="cfg-telegram-lbl">Etapa 1 — principal <small style="font-weight:400">(ativa autopreservação)</small></span>
+          <input class="cfg-input" id="mon-etapa-1" type="text" placeholder="conferir_pecas" style="font-family:monospace;font-size:.74rem">
+        </div>
+        <div>
+          <span class="cfg-telegram-lbl">Etapa 2 — alerta</span>
+          <input class="cfg-input" id="mon-etapa-2" type="text" placeholder="orcamento_enviado" style="font-family:monospace;font-size:.74rem">
+        </div>
+        <div>
+          <span class="cfg-telegram-lbl">Etapa 3 — alerta</span>
+          <input class="cfg-input" id="mon-etapa-3" type="text" placeholder="follow_up" style="font-family:monospace;font-size:.74rem">
+        </div>
+      </div>
+
       <p style="font-size:.72rem;color:var(--txt2);font-weight:600;margin-bottom:8px;">Limites de Alerta (envia aviso via Telegram):</p>
       <div class="cfg-grid-2">
         <div>
@@ -1355,9 +1392,12 @@ body.auth-locked #auth-screen{display:flex;}
       </div>
       <div style="margin-top:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
         <button class="cfg-save" onclick="salvarConfigMonitoramento()"><span data-icon="save"></span>Salvar Monitoramento</button>
+        <button class="cfg-save" onclick="testarMonitoramentoAgora()" style="background:var(--royal)">▶️ Testar Agora</button>
         <button id="mon-reativar-btn" onclick="desativarAutopreservacaoUI()" style="display:none;background:var(--green);color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:var(--f)">✅ Reativar IA</button>
+        <button id="mon-limpar-flag-btn" onclick="limparFlagMonitoramentoUI()" style="display:none;background:var(--yellow);color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:var(--f)" title="Remove a flag de pausa sem chamar o GPT Maker. Use quando o banner aparece mesmo com pipeline limpo.">🔓 Limpar Flag (emergência)</button>
         <span class="cfg-status" id="mon-save-status"></span>
       </div>
+      <div id="mon-teste-resultado" style="display:none;margin-top:12px;padding:12px 14px;border-radius:8px;background:var(--sf2);border:1px solid var(--bd);font-size:.76rem;line-height:1.7;"></div>
       <p style="font-size:.7rem;color:var(--txt3);margin-top:10px;">
         ⚙️ Configure o trigger periódico: <code>criarTriggerMonitoramento()</code> no Apps Script Editor.
       </p>
@@ -1438,6 +1478,17 @@ body.auth-locked #auth-screen{display:flex;}
       </div>
       <div id="cfg-user-feedback" class="cfg-status" style="display:none;margin-left:0;"></div>
       <div id="cfg-users-list"></div>
+
+      <!-- Manutenção de sessões -->
+      <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--bd);display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <button onclick="limparSessoesAntigasUI()" class="cfg-save"
+                style="margin-top:0;padding:7px 15px;background:var(--yellow);font-size:.75rem">
+          🧹 Limpar sessões expiradas
+        </button>
+        <span id="cfg-sessoes-status" style="font-size:.75rem;color:var(--txt3)">
+          As propriedades <code>auth_session_*</code> acumulam uma entrada por login. Esta ação remove apenas as expiradas, mantendo as sessões ativas.
+        </span>
+      </div>
     </div>
 
     <!-- Seção: URLs dos Webhooks -->
@@ -3861,29 +3912,85 @@ function toggleGMTokenVis() {
   if (btn) btn.textContent = inp.type === 'password' ? '👁' : '🙈';
 }
 
+/* ─── helpers de UI ─── */
+function _getGMDados_() {
+  return {
+    gptmaker_api_key:      (document.getElementById('cfg-gm-token')     || {}).value || '',
+    gptmaker_agent_id:     (document.getElementById('cfg-gm-agent')     || {}).value || '',
+    gptmaker_workspace_id: (document.getElementById('cfg-gm-workspace') || {}).value || '',
+    gptmaker_channel_id:   (document.getElementById('cfg-gm-channel')   || {}).value || '',
+  };
+}
+
+/* Salva as credenciais GPT Maker no Script Properties SEM testar */
+function salvarIntegracaoUI() {
+  var status = document.getElementById('cfg-gm-test-status');
+  if (status) { status.style.color = 'var(--txt3)'; status.textContent = '⏳ Salvando...'; }
+  google.script.run
+    .withSuccessHandler(function() {
+      if (status) { status.style.color = 'var(--green)'; status.textContent = '✅ Integração salva!'; }
+      carregarConfigIntegracao(); // atualiza badges de origem
+      setTimeout(function() { if (status && status.textContent === '✅ Integração salva!') status.textContent = ''; }, 4000);
+    })
+    .withFailureHandler(function(e) {
+      if (status) { status.style.color = 'var(--red)'; status.textContent = '❌ Erro ao salvar: ' + (e.message || e); }
+    })
+    .salvarIntegracaoConfig(_getGMDados_(), S.authToken);
+}
+
+/* Salva primeiro, depois testa — garante que Script Properties estão populados antes do health-check */
 function testarConexaoGPTMaker() {
   var status = document.getElementById('cfg-gm-test-status');
-  if (status) { status.style.color = 'var(--txt3)'; status.textContent = '⏳ Testando...'; }
+  if (status) { status.style.color = 'var(--txt3)'; status.textContent = '⏳ Salvando e testando...'; }
+
+  google.script.run
+    .withSuccessHandler(function() {
+      // Credenciais salvas → agora executa o health-check
+      google.script.run
+        .withSuccessHandler(function(r) {
+          if (!r) return;
+          var linhas = (r.resultados || [])
+            .filter(function(s) { return s.servico.indexOf('GPT Maker') > -1; })
+            .map(function(s) {
+              return s.ok
+                ? '✅ ' + s.servico + ': ' + (s.status || 'ok') + (s.agente_nome ? ' (' + s.agente_nome + ')' : '')
+                : '❌ ' + s.servico + ': ' + (s.erro || 'falha');
+            });
+          if (status) {
+            var allOk = linhas.length > 0 && linhas.every(function(l) { return l.startsWith('✅'); });
+            status.style.color = allOk ? 'var(--green)' : 'var(--red)';
+            status.innerHTML = linhas.join(' &nbsp;|&nbsp; ') || (r.ok ? '✅ OK' : '❌ Nenhum resultado GPT Maker');
+          }
+          carregarConfigIntegracao(); // atualiza badges de origem
+        })
+        .withFailureHandler(function(e) {
+          if (status) { status.style.color = 'var(--red)'; status.textContent = '❌ Erro no teste: ' + (e.message || e); }
+        })
+        .verificarSaudeCompleta(S.authToken);
+    })
+    .withFailureHandler(function(e) {
+      if (status) { status.style.color = 'var(--red)'; status.textContent = '❌ Erro ao salvar: ' + (e.message || e); }
+    })
+    .salvarIntegracaoConfig(_getGMDados_(), S.authToken);
+}
+
+/* Remove sessões auth_session_* expiradas do Script Properties */
+function limparSessoesAntigasUI() {
+  var el = document.getElementById('cfg-sessoes-status');
+  if (el) { el.style.color = 'var(--txt3)'; el.textContent = '⏳ Limpando sessões expiradas...'; }
   google.script.run
     .withSuccessHandler(function(r) {
       if (!r) return;
-      var linhas = r.resultados
-        .filter(function(s) { return s.servico.indexOf('GPT Maker') > -1; })
-        .map(function(s) {
-          return s.ok
-            ? '✅ ' + s.servico + ': ' + (s.status || 'ok') + (s.agente_nome ? ' (' + s.agente_nome + ')' : '')
-            : '❌ ' + s.servico + ': ' + (s.erro || 'falha');
-        });
-      if (status) {
-        var allOk = linhas.every(function(l) { return l.startsWith('✅'); });
-        status.style.color = allOk ? 'var(--green)' : 'var(--red)';
-        status.innerHTML = linhas.join(' &nbsp;|&nbsp; ') || (r.ok ? '✅ OK' : '❌ Falha');
+      if (el) {
+        el.style.color = 'var(--green)';
+        el.textContent = '✅ ' + r.deletados + ' sessão(ões) expirada(s) removida(s). ' + r.mantidos + ' sessão(ões) ativa(s) mantida(s).';
       }
+      toast('🧹 ' + r.deletados + ' sessão(ões) expirada(s) removida(s)', 'success');
     })
     .withFailureHandler(function(e) {
-      if (status) { status.style.color = 'var(--red)'; status.textContent = '❌ Erro: ' + e.message; }
+      if (el) { el.style.color = 'var(--red)'; el.textContent = '❌ ' + (e.message || e); }
     })
-    .verificarSaudeCompleta(S.authToken);
+    .limparSessoesAntigas(S.authToken);
 }
 
 function renderUsersList(users) {
@@ -4210,6 +4317,111 @@ function salvarConfigFollowUp() {
     .salvarFollowUpConfig(dados, S.authToken);
 }
 
+/* Executa follow-up manualmente e mostra resultado de auditoria */
+function executarFollowUpAgora() {
+  var box = document.getElementById('fu-exec-resultado');
+  if (box) { box.style.display = 'block'; box.innerHTML = '⏳ Executando follow-up...'; box.style.borderColor = 'var(--bd)'; }
+  google.script.run
+    .withSuccessHandler(function(r) {
+      if (!box) return;
+      if (!r) { box.innerHTML = '❌ Sem resposta do servidor.'; return; }
+      if (r.status === 'desativado') {
+        box.style.borderColor = 'var(--yellow)';
+        box.innerHTML = '⚠️ Follow-up está <b>desativado</b> nas configurações. Ative o checkbox acima e salve antes de executar.';
+        return;
+      }
+      var cor = r.erros > 0 ? 'var(--red)' : r.enviados > 0 ? 'var(--green)' : 'var(--txt3)';
+      box.style.borderColor = cor;
+      var linhas = [
+        '✅ <b>Execução concluída</b>',
+        '<b>Enviados:</b> ' + r.enviados + ' &nbsp;|&nbsp; <b>Pulados:</b> ' + r.pulados + ' &nbsp;|&nbsp; <b>Erros:</b> ' + r.erros,
+      ];
+      if (r.motivo)   linhas.push('<b>Motivo:</b> ' + r.motivo);
+      if (r.erros > 0) linhas.push('⚠️ Veja o Log de Execuções para detalhes dos erros.');
+      box.innerHTML = linhas.join('<br>');
+      // Atualiza tracking automaticamente após execução
+      setTimeout(function() {
+        var area = document.getElementById('fu-tracking-area');
+        if (area && area.style.display !== 'none') carregarTrackingFollowUp();
+      }, 800);
+    })
+    .withFailureHandler(function(e) {
+      if (box) { box.style.display = 'block'; box.style.borderColor = 'var(--red)'; box.innerHTML = '❌ Erro: ' + (e.message||e); }
+    })
+    .executarFollowUpManual(S.authToken);
+}
+
+/* Exibe/oculta a área de tracking e carrega os dados */
+function verTrackingFollowUp() {
+  var area = document.getElementById('fu-tracking-area');
+  if (!area) return;
+  if (area.style.display === 'none' || !area.style.display) {
+    area.style.display = 'block';
+    carregarTrackingFollowUp();
+  } else {
+    area.style.display = 'none';
+  }
+}
+
+function carregarTrackingFollowUp() {
+  var box = document.getElementById('fu-tracking-table');
+  if (box) box.innerHTML = '⏳ Carregando...';
+  google.script.run
+    .withSuccessHandler(function(rows) {
+      renderTrackingFollowUp(rows || []);
+    })
+    .withFailureHandler(function(e) {
+      if (box) box.innerHTML = '<span style="color:var(--red)">❌ Erro: ' + (e.message||e) + '</span>';
+    })
+    .getFollowUpTracking(S.authToken);
+}
+
+function renderTrackingFollowUp(rows) {
+  var box = document.getElementById('fu-tracking-table');
+  if (!box) return;
+  if (!rows.length) {
+    box.innerHTML = '<p style="color:var(--txt3);font-size:.75rem;padding:8px 0">Nenhum registro de follow-up ainda. Execute o follow-up para ver o tracking aqui.</p>';
+    return;
+  }
+  var headers = ['Protocolo','Chat ID','Lead','Produto','Valor','Tentativas','Última Tentativa','Status','Motivo'];
+  var html = '<table style="width:100%;border-collapse:collapse;font-size:.72rem;">';
+  html += '<thead><tr>' + headers.map(function(h) {
+    return '<th style="padding:7px 8px;border-bottom:2px solid var(--bd);text-align:left;font-size:.6rem;text-transform:uppercase;letter-spacing:.06em;color:var(--txt3);white-space:nowrap">' + _esc(h) + '</th>';
+  }).join('') + '<th style="padding:7px 8px;border-bottom:2px solid var(--bd);width:60px"></th></tr></thead><tbody>';
+
+  rows.forEach(function(row) {
+    var proto  = String(row['Protocolo'] || '');
+    var status = String(row['Status'] || 'ativo').toLowerCase();
+    var corStatus = status === 'ativo' ? 'var(--royal)' : status === 'respondido' ? 'var(--green)' : status === 'concluido' ? 'var(--txt3)' : 'var(--yellow)';
+    html += '<tr style="border-bottom:1px solid var(--bd)">';
+    headers.forEach(function(h) {
+      var val = String(row[h] !== undefined ? row[h] : '');
+      var style = h === 'Status' ? 'color:' + corStatus + ';font-weight:700' : '';
+      html += '<td style="padding:6px 8px;' + style + '">' + _esc(val || '—') + '</td>';
+    });
+    // Reset button
+    html += '<td style="padding:6px 8px"><button onclick="resetarTrackingUI(\'' + _esc(proto) + '\')" style="font-size:.66rem;padding:3px 8px;border-radius:5px;border:1px solid var(--bd);background:var(--sf2);cursor:pointer;color:var(--txt2)" title="Zerar tentativas deste protocolo">🔄</button></td>';
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  box.innerHTML = html;
+}
+
+function resetarTrackingUI(protocolo) {
+  if (!confirm('Zerar o tracking de follow-up para o protocolo:\n' + protocolo + '\n\nIsso reinicia as tentativas para 0 e reativa o follow-up para este lead.')) return;
+  google.script.run
+    .withSuccessHandler(function(r) {
+      if (r && r.ok) {
+        toast('✅ Tracking resetado para ' + protocolo, 'ok');
+        carregarTrackingFollowUp();
+      } else {
+        toast('❌ ' + (r && r.erro ? r.erro : 'Erro ao resetar'), 'erro');
+      }
+    })
+    .withFailureHandler(function(e) { toast('Erro: ' + (e.message||e), 'erro'); })
+    .resetarFollowUpProtocolo(protocolo, S.authToken);
+}
+
 // Listener contador de prompt
 document.addEventListener('DOMContentLoaded', function() {
   var fp = document.getElementById('fu-prompt');
@@ -4270,26 +4482,34 @@ function iniciarHealthCheck() {
 /* ════════════════════════════════════════════════════
    MONITORAMENTO + AUTOPRESERVAÇÃO — UI
    ════════════════════════════════════════════════════ */
+/* ── helper: aplica estado de autopreservação na UI ── */
+function _apMonUI_(ativa, motivo) {
+  var banner       = document.getElementById('ap-banner');
+  var bannerTxt    = document.getElementById('ap-banner-txt');
+  var monBox       = document.getElementById('mon-status-box');
+  var reativarBtn  = document.getElementById('mon-reativar-btn');
+  var limparBtn    = document.getElementById('mon-limpar-flag-btn');
+
+  if (ativa) {
+    if (banner)    { banner.style.display = 'flex'; }
+    if (bannerTxt) { bannerTxt.textContent = '🚨 IA PAUSADA — ' + (motivo || 'Pipeline sobrecarregado') + '. Atualize o CRM para reativar.'; }
+    if (monBox)    { monBox.style.background='var(--redd)';monBox.style.borderColor='var(--red)';monBox.style.color='var(--red)';monBox.textContent='🔴 AUTOPRESERVAÇÃO ATIVA — IA pausada. Motivo: ' + (motivo||''); }
+    if (reativarBtn) reativarBtn.style.display = 'inline-flex';
+    if (limparBtn)   limparBtn.style.display   = 'inline-flex';
+  } else {
+    if (banner)    { banner.style.display = 'none'; }
+    if (monBox)    { monBox.style.background='var(--gd)';monBox.style.borderColor='var(--green)';monBox.style.color='var(--green)';monBox.textContent='✅ IA operando normalmente'; }
+    if (reativarBtn) reativarBtn.style.display = 'none';
+    if (limparBtn)   limparBtn.style.display   = 'none';
+  }
+}
+
 function verificarStatusAutopreservacao() {
   if (!S.authToken) return;
   google.script.run
     .withSuccessHandler(function(r) {
       if (!r) return;
-      var banner = document.getElementById('ap-banner');
-      var bannerTxt = document.getElementById('ap-banner-txt');
-      var monBox = document.getElementById('mon-status-box');
-      var reativarBtn = document.getElementById('mon-reativar-btn');
-
-      if (r.autopreservacao && r.autopreservacao.ativa) {
-        if (banner) { banner.style.display = 'flex'; }
-        if (bannerTxt) bannerTxt.textContent = '🚨 IA PAUSADA — ' + (r.autopreservacao.motivo || 'Pipeline sobrecarregado') + '. Atualize o CRM para reativar.';
-        if (monBox) { monBox.style.background = 'var(--redd)'; monBox.style.borderColor = 'var(--red)'; monBox.style.color = 'var(--red)'; monBox.textContent = '🔴 AUTOPRESERVAÇÃO ATIVA — IA pausada. Motivo: ' + (r.autopreservacao.motivo || ''); }
-        if (reativarBtn) reativarBtn.style.display = 'inline-flex';
-      } else {
-        if (banner) banner.style.display = 'none';
-        if (monBox) { monBox.style.background = 'var(--gd)'; monBox.style.borderColor = 'var(--green)'; monBox.style.color = 'var(--green)'; monBox.textContent = '✅ IA operando normalmente'; }
-        if (reativarBtn) reativarBtn.style.display = 'none';
-      }
+      _apMonUI_(r.autopreservacao && r.autopreservacao.ativa, r.autopreservacao && r.autopreservacao.motivo);
     })
     .withFailureHandler(function() {})
     .getMonitoramentoStatus(S.authToken);
@@ -4300,25 +4520,24 @@ function carregarConfigMonitoramento() {
     .withSuccessHandler(function(r) {
       if (!r || !r.config) return;
       var cfg = r.config;
-      var el = function(id) { return document.getElementById(id); };
-      if (el('mon-ativo'))       el('mon-ativo').checked    = String(cfg.mon_ativo).toLowerCase() === 'true';
-      if (el('mon-al-conferir')) el('mon-al-conferir').value = cfg.mon_alerta_conferir_pecas    || '80';
-      if (el('mon-al-orcamento'))el('mon-al-orcamento').value= cfg.mon_alerta_orcamento_enviado || '50';
-      if (el('mon-al-follow'))   el('mon-al-follow').value   = cfg.mon_alerta_follow_up         || '40';
-      if (el('mon-al-global'))   el('mon-al-global').value   = cfg.mon_alerta_global            || '200';
-      if (el('mon-cr-conferir')) el('mon-cr-conferir').value = cfg.mon_critico_conferir_pecas   || '150';
-      if (el('mon-cr-orcamento'))el('mon-cr-orcamento').value= cfg.mon_critico_orcamento_enviado|| '100';
-      if (el('mon-cr-follow'))   el('mon-cr-follow').value   = cfg.mon_critico_follow_up        || '80';
-      if (el('mon-cr-global'))   el('mon-cr-global').value   = cfg.mon_critico_global           || '350';
-      if (el('mon-intervalo'))   el('mon-intervalo').value   = cfg.mon_intervalo_alerta_horas   || '4';
-
-      // Atualiza status de autopreservação
-      var monBox = document.getElementById('mon-status-box');
-      var reativarBtn = document.getElementById('mon-reativar-btn');
-      if (r.autopreservacao && r.autopreservacao.ativa) {
-        if (monBox) { monBox.style.background='var(--redd)';monBox.style.borderColor='var(--red)';monBox.style.color='var(--red)';monBox.textContent='🔴 AUTOPRESERVAÇÃO ATIVA — IA pausada. ' + (r.autopreservacao.motivo||''); }
-        if (reativarBtn) reativarBtn.style.display = 'inline-flex';
-      }
+      var el  = function(id) { return document.getElementById(id); };
+      // Etapas configuráveis
+      if (el('mon-etapa-1'))     el('mon-etapa-1').value     = cfg.mon_etapa_1 || 'conferir_pecas';
+      if (el('mon-etapa-2'))     el('mon-etapa-2').value     = cfg.mon_etapa_2 || 'orcamento_enviado';
+      if (el('mon-etapa-3'))     el('mon-etapa-3').value     = cfg.mon_etapa_3 || 'follow_up';
+      // Thresholds
+      if (el('mon-ativo'))       el('mon-ativo').checked     = String(cfg.mon_ativo).toLowerCase() === 'true';
+      if (el('mon-al-conferir')) el('mon-al-conferir').value = cfg.mon_alerta_conferir_pecas     || '300';
+      if (el('mon-al-orcamento'))el('mon-al-orcamento').value= cfg.mon_alerta_orcamento_enviado  || '150';
+      if (el('mon-al-follow'))   el('mon-al-follow').value   = cfg.mon_alerta_follow_up          || '120';
+      if (el('mon-al-global'))   el('mon-al-global').value   = cfg.mon_alerta_global             || '400';
+      if (el('mon-cr-conferir')) el('mon-cr-conferir').value = cfg.mon_critico_conferir_pecas    || '500';
+      if (el('mon-cr-orcamento'))el('mon-cr-orcamento').value= cfg.mon_critico_orcamento_enviado || '250';
+      if (el('mon-cr-follow'))   el('mon-cr-follow').value   = cfg.mon_critico_follow_up         || '200';
+      if (el('mon-cr-global'))   el('mon-cr-global').value   = cfg.mon_critico_global            || '700';
+      if (el('mon-intervalo'))   el('mon-intervalo').value   = cfg.mon_intervalo_alerta_horas    || '4';
+      // Autopreservação
+      _apMonUI_(r.autopreservacao && r.autopreservacao.ativa, r.autopreservacao && r.autopreservacao.motivo);
     })
     .withFailureHandler(function(e) { LOG.warn('MON', 'Erro ao carregar config: ' + e.message); })
     .getMonitoramentoStatus(S.authToken);
@@ -4326,17 +4545,21 @@ function carregarConfigMonitoramento() {
 
 function salvarConfigMonitoramento() {
   var el = function(id) { return document.getElementById(id); };
+  var v  = function(id, fb) { return el(id) ? el(id).value : fb; };
   var dados = {
-    mon_ativo:                   el('mon-ativo')       ? (el('mon-ativo').checked ? 'true' : 'false') : 'true',
-    mon_alerta_conferir_pecas:   el('mon-al-conferir') ? el('mon-al-conferir').value  : '80',
-    mon_alerta_orcamento_enviado:el('mon-al-orcamento')? el('mon-al-orcamento').value : '50',
-    mon_alerta_follow_up:        el('mon-al-follow')   ? el('mon-al-follow').value    : '40',
-    mon_alerta_global:           el('mon-al-global')   ? el('mon-al-global').value    : '200',
-    mon_critico_conferir_pecas:  el('mon-cr-conferir') ? el('mon-cr-conferir').value  : '150',
-    mon_critico_orcamento_enviado:el('mon-cr-orcamento')?el('mon-cr-orcamento').value : '100',
-    mon_critico_follow_up:       el('mon-cr-follow')   ? el('mon-cr-follow').value    : '80',
-    mon_critico_global:          el('mon-cr-global')   ? el('mon-cr-global').value    : '350',
-    mon_intervalo_alerta_horas:  el('mon-intervalo')   ? el('mon-intervalo').value    : '4',
+    mon_etapa_1:                  v('mon-etapa-1',     'conferir_pecas'),
+    mon_etapa_2:                  v('mon-etapa-2',     'orcamento_enviado'),
+    mon_etapa_3:                  v('mon-etapa-3',     'follow_up'),
+    mon_ativo:                    el('mon-ativo') ? (el('mon-ativo').checked ? 'true' : 'false') : 'true',
+    mon_alerta_conferir_pecas:    v('mon-al-conferir',  '300'),
+    mon_alerta_orcamento_enviado: v('mon-al-orcamento', '150'),
+    mon_alerta_follow_up:         v('mon-al-follow',    '120'),
+    mon_alerta_global:            v('mon-al-global',    '400'),
+    mon_critico_conferir_pecas:   v('mon-cr-conferir',  '500'),
+    mon_critico_orcamento_enviado:v('mon-cr-orcamento', '250'),
+    mon_critico_follow_up:        v('mon-cr-follow',    '200'),
+    mon_critico_global:           v('mon-cr-global',    '700'),
+    mon_intervalo_alerta_horas:   v('mon-intervalo',    '4'),
   };
   var st = el('mon-save-status');
   if (st) st.textContent = 'Salvando...';
@@ -4352,21 +4575,56 @@ function salvarConfigMonitoramento() {
     .salvarMonitoramentoConfig(dados, S.authToken);
 }
 
+/* Executa ciclo de monitoramento agora e exibe resultado detalhado */
+function testarMonitoramentoAgora() {
+  var box = document.getElementById('mon-teste-resultado');
+  if (box) { box.style.display = 'block'; box.innerHTML = '⏳ Executando monitoramento...'; }
+  google.script.run
+    .withSuccessHandler(function(r) {
+      if (!box) return;
+      if (!r) { box.innerHTML = '❌ Sem resposta.'; return; }
+      var linhas = ['<b>Status:</b> ' + (r.status || '?')];
+      if (r.alertas !== undefined) linhas.push('<b>Alertas:</b> ' + r.alertas + ' &nbsp; <b>Críticos:</b> ' + r.criticos);
+      if (r.contagens) {
+        var conts = Object.keys(r.contagens).map(function(k) {
+          return '<code>' + k + '</code>: ' + r.contagens[k];
+        }).join(' &nbsp;|&nbsp; ');
+        linhas.push('<b>Contagens:</b> ' + (conts || 'nenhuma'));
+      }
+      var cor = r.criticos > 0 ? 'var(--red)' : r.alertas > 0 ? 'var(--yellow)' : 'var(--green)';
+      box.style.borderColor = cor;
+      box.innerHTML = linhas.join('<br>');
+    })
+    .withFailureHandler(function(e) {
+      if (box) { box.style.display = 'block'; box.innerHTML = '❌ Erro: ' + (e.message || e); }
+    })
+    .executarMonitoramentoManual(S.authToken);
+}
+
+/* Remove apenas a flag local sem tocar na API GPT Maker */
+function limparFlagMonitoramentoUI() {
+  if (!confirm('Limpar flag de autopreservação?\n\nIsso remove o banner de "IA Pausada" sem chamar a API GPT Maker.\nUse quando o banner aparece mesmo com o pipeline já organizado.\n\nCertifique-se de que o agente está ativo no painel do GPT Maker.')) return;
+  google.script.run
+    .withSuccessHandler(function(r) {
+      if (r && r.ok) {
+        toast('🔓 Flag de pausa removida. IA liberada.', 'ok');
+        _apMonUI_(false, '');
+      }
+    })
+    .withFailureHandler(function(e) { toast('Erro: ' + (e.message||e), 'erro'); })
+    .limparFlagAutopreservacaoFrontend(S.authToken);
+}
+
 function desativarAutopreservacaoUI() {
-  if (!confirm('Reativar a IA?\n\nCertifique-se de que o pipeline foi atualizado antes de reativar.')) return;
+  if (!confirm('Reativar a IA via GPT Maker?\n\nCertifique-se de que o pipeline foi atualizado antes de reativar.\n\n(Se o GPT Maker não responder, use "Limpar Flag" no banner para remover apenas a flag local.)')) return;
   google.script.run
     .withSuccessHandler(function(r) {
       if (r.ok) {
         toast('✅ IA reativada com sucesso!', 'ok');
-        var banner = document.getElementById('ap-banner');
-        if (banner) banner.style.display = 'none';
-        var monBox = document.getElementById('mon-status-box');
-        if (monBox) { monBox.style.background='var(--gd)';monBox.style.borderColor='var(--green)';monBox.style.color='var(--green)';monBox.textContent='✅ IA operando normalmente'; }
-        var rb = document.getElementById('mon-reativar-btn');
-        if (rb) rb.style.display = 'none';
+        _apMonUI_(false, '');
       }
     })
-    .withFailureHandler(function(e) { toast('Erro: ' + (e.message||e), 'erro'); })
+    .withFailureHandler(function(e) { toast('Erro ao reativar: ' + (e.message||e) + '\n\nUse "🔓 Limpar Flag" se o GPT Maker não responder.', 'erro'); })
     .desativarAutopreservacao(S.authToken);
 }
 
