@@ -748,30 +748,61 @@ function enviarMensagemModal(chatId, texto, authToken) {
  * @param {string} authToken
  * @returns {{ ok: boolean, imageUrl?: string, erro?: string }}
  */
+/**
+ * Faz upload de imagem (data URL base64) para o Drive, obtém URL pública direta e envia via GPT Maker.
+ * URL usa drive.usercontent.google.com — formato sem redirecionamento de login para arquivos públicos.
+ */
 function enviarImagemModal(chatId, dataUrl, mimeType, authToken) {
   requireAuth(authToken, 'operador');
   if (!chatId || !dataUrl) return { ok: false, erro: 'chatId ou imagem ausente' };
   try {
-    // Remove cabeçalho data URL
-    var raw = dataUrl.replace(/^data:[^;]+;base64,/, '');
-    var ext = (mimeType === 'image/png') ? 'png' : (mimeType === 'image/gif' ? 'gif' : 'jpg');
+    var raw      = dataUrl.replace(/^data:[^;]+;base64,/, '');
+    var ext      = mimeType === 'image/png' ? 'png' : (mimeType === 'image/gif' ? 'gif' : 'jpg');
     var fileName = 'crm-img-' + Date.now() + '.' + ext;
 
-    // Upload para Google Drive
     var bytes = Utilities.base64Decode(raw);
     var blob  = Utilities.newBlob(bytes, mimeType || 'image/jpeg', fileName);
     var file  = DriveApp.createFile(blob);
     file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    var imageUrl = 'https://drive.google.com/uc?export=view&id=' + file.getId();
 
-    Logger.log('[MODAL-CHAT] enviarImagemModal → uploaded: ' + imageUrl);
+    // URL direta (sem redirect de login) — compatível com download automatizado por WhatsApp/Z-API
+    var imageUrl = 'https://drive.usercontent.google.com/download?id=' + file.getId() + '&export=download&authuser=0';
+    Logger.log('[MODAL-CHAT] enviarImagemModal → fileId=' + file.getId() + ' url=' + imageUrl);
 
-    // Envia para GPT Maker com imageUrl
     gptMakerEnviarImagem(chatId, imageUrl, '');
     Logger.log('[MODAL-CHAT] ✓ Imagem enviada ao GPT Maker');
     return { ok: true, imageUrl: imageUrl };
   } catch(e) {
     Logger.log('[MODAL-CHAT] ✗ Erro ao enviar imagem: ' + e.message);
+    return { ok: false, erro: e.message };
+  }
+}
+
+/**
+ * Faz upload de áudio (base64 WebM/OGG) para o Drive e envia via GPT Maker.
+ */
+function enviarAudioModal(chatId, dataUrl, mimeType, authToken) {
+  requireAuth(authToken, 'operador');
+  if (!chatId || !dataUrl) return { ok: false, erro: 'chatId ou áudio ausente' };
+  try {
+    var raw      = dataUrl.replace(/^data:[^;]+;base64,/, '');
+    var ext      = mimeType && mimeType.includes('ogg') ? 'ogg' : 'webm';
+    var fileName = 'crm-audio-' + Date.now() + '.' + ext;
+    var mime     = mimeType || 'audio/webm';
+
+    var bytes = Utilities.base64Decode(raw);
+    var blob  = Utilities.newBlob(bytes, mime, fileName);
+    var file  = DriveApp.createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+    var audioUrl = 'https://drive.usercontent.google.com/download?id=' + file.getId() + '&export=download&authuser=0';
+    Logger.log('[MODAL-CHAT] enviarAudioModal → fileId=' + file.getId());
+
+    gptMakerEnviarAudio(chatId, audioUrl);
+    Logger.log('[MODAL-CHAT] ✓ Áudio enviado ao GPT Maker');
+    return { ok: true, audioUrl: audioUrl };
+  } catch(e) {
+    Logger.log('[MODAL-CHAT] ✗ Erro ao enviar áudio: ' + e.message);
     return { ok: false, erro: e.message };
   }
 }

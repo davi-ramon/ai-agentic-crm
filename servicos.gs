@@ -344,9 +344,16 @@ function telegramEnviarMensagem(chatId, texto, parseMode) {
  * @returns {Object} { success: true } ou erro
  */
 function gptMakerEnviarImagem(chatId, imageUrl, caption) {
-  var payload = { imageUrl: imageUrl };
-  if (caption) payload.message = caption;
+  // 'message' é required na API GPT Maker — enviar vazio string, nunca omitir
+  var payload = { message: caption || ' ', imageUrl: imageUrl };
   Logger.log('[GPTMAKER] Enviando imagem → chatId: ' + chatId + ' imageUrl: ' + imageUrl);
+  return chamarGPTMaker('POST', '/chat/' + chatId + '/send-message', payload);
+}
+
+function gptMakerEnviarAudio(chatId, audioUrl) {
+  // 'message' é required — usar espaço para não violar validação
+  var payload = { message: ' ', audioUrl: audioUrl };
+  Logger.log('[GPTMAKER] Enviando áudio → chatId: ' + chatId + ' audioUrl: ' + audioUrl);
   return chamarGPTMaker('POST', '/chat/' + chatId + '/send-message', payload);
 }
 

@@ -646,6 +646,30 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);min-height:100vh
 .mc-ctx .mc-ctx-d{color:#EF4444;}
 .mc-ctx-sep{height:1px;background:var(--bd);margin:3px 0;}
 
+/* ── Seções colapsáveis da modal (ficha, veículo, negociação) ── */
+.mi-sec{border:1px solid var(--bd);border-radius:10px;overflow:hidden;margin-bottom:9px;}
+.mi-sec-hd{display:flex;align-items:center;gap:7px;padding:8px 11px;background:var(--sf2);cursor:pointer;user-select:none;font-size:.73rem;font-weight:600;color:var(--txt);border:none;width:100%;text-align:left;transition:background var(--t);}
+.mi-sec-hd:hover{background:var(--rd);}
+.mi-sec-hd svg{width:14px;height:14px;opacity:.55;flex-shrink:0;}
+.mi-sec-chev{margin-left:auto;transition:transform var(--t);opacity:.45;}
+.mi-sec-hd.open .mi-sec-chev{transform:rotate(180deg);}
+.mi-sec-body{padding:10px 12px;display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;}
+.mi-sec-body.closed{display:none;}
+.mi-sec-body .full{grid-column:1/-1;}
+.mi-sec-body .mi{display:flex;flex-direction:column;gap:2px;}
+.mi-sec-body .mi-lbl{font-size:.63rem;font-weight:600;color:var(--txt3);letter-spacing:.02em;text-transform:uppercase;}
+.mi-sec-body .mi-val{font-size:.78rem;color:var(--txt);}
+.mi-client-block2{display:flex;align-items:center;gap:11px;padding:12px;border-bottom:1px solid var(--bd);}
+.mi-client-av2{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--royal),#7c3aed);color:#fff;font-size:.95rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+/* ── Gravador de áudio ──────────────────────────────────── */
+#mc-rec-bar{padding:5px 10px;display:flex;align-items:center;gap:8px;border-top:1px solid var(--bd);display:none;}
+.mc-rec-dot{width:8px;height:8px;border-radius:50%;background:#EF4444;animation:recP 1.1s ease-in-out infinite;flex-shrink:0;}
+@keyframes recP{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.35;transform:scale(.8);}}
+.mc-rec-timer{font-size:.73rem;color:var(--txt2);font-variant-numeric:tabular-nums;min-width:34px;}
+.mc-rec-preview{flex:1;min-width:0;}
+.mc-rec-preview audio{width:100%;height:28px;}
+.mc-rec-send{background:var(--royal);color:#fff;border:none;border-radius:99px;padding:4px 12px;font-size:.72rem;font-family:var(--f);cursor:pointer;}
+.mc-rec-cancel{background:var(--sf2);color:var(--txt);border:1px solid var(--bd);border-radius:99px;padding:4px 10px;font-size:.72rem;font-family:var(--f);cursor:pointer;}
 /* ── TRANSFERÊNCIAS ───────────────────────────────────── */
 .tf-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px;}
 
@@ -2028,7 +2052,10 @@ function svgIcon(name) {
     phone:'<svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21.64 16z"/></svg>',
     play:'<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>',
     pause:'<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>',
-    download:'<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'
+    download:'<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+    'chevron-d':'<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>',
+    user:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>',
+    car:'<svg viewBox="0 0 24 24"><path d="M5 17H3v-5l2-5h14l2 5v5h-2"/><circle cx="7.5" cy="17" r="1.5"/><circle cx="16.5" cy="17" r="1.5"/><path d="M5 12h14"/></svg>'
   };
   return '<span class="svg-icon">' + (icons[name] || icons.dashboard) + '</span>';
 }
@@ -4304,44 +4331,81 @@ function openModal(proto) {
     }).join('')+'</select>';
   }
 
-  // ── Bloco do cliente ──────────────────────────────────────
+  // ── Helpers ───────────────────────────────────────────────
   var waNum  = String(card.whatsapp || '').replace(/\D/g,'');
   var waFmt  = waNum.length >= 8 ? '+'+waNum : '';
   var nomeRaw = (card.nomeCliente && card.nomeCliente !== '—') ? card.nomeCliente : (card.oportunidade || 'Cliente');
   var initials = nomeRaw.replace(/[^a-zA-ZÀ-ÿ ]/g,'').split(' ').filter(Boolean)
                   .slice(0,2).map(function(w){return w[0].toUpperCase();}).join('') || 'ML';
-  var clienteBlock =
-    '<div class="mi-client-block">' +
-      '<div class="mi-client-av">'+initials+'</div>' +
+
+  // Helper de seção colapsável — usa data-sec + onclick(this) para evitar escaping de string
+  function mkSec(id, icon, label, openByDefault, innerHtml) {
+    var hdCls  = 'mi-sec-hd' + (openByDefault ? ' open' : '');
+    var hidden = openByDefault ? '' : ' style="display:none"';
+    return '<div class="mi-sec">' +
+      '<button class="' + hdCls + '" id="msh-' + id + '" data-sec="' + id + '" onclick="_miToggleSec(this)">' +
+        svgIcon(icon) + label +
+        '<span class="mi-sec-chev">' + svgIcon('chevron-d') + '</span>' +
+      '</button>' +
+      '<div id="msb-' + id + '"' + hidden + '>' + innerHtml + '</div>' +
+    '</div>';
+  }
+
+  // ── 1. Ficha do Cliente ────────────────────────────────────
+  var fichaHtml =
+    '<div class="mi-client-block2">' +
+      '<div class="mi-client-av2">' + initials + '</div>' +
       '<div style="min-width:0">' +
-        '<div class="mi-client-name">'+esc(nomeRaw)+'</div>' +
+        '<div style="font-size:.84rem;font-weight:600;color:var(--txt)">' + esc(nomeRaw) + '</div>' +
         (waNum.length >= 8
-          ? '<a class="mi-wa-badge" href="https://wa.me/'+waNum+'" target="_blank" rel="noopener">'+svgIcon('whatsapp')+waFmt+'</a>'
-          : '<span style="font-size:.69rem;color:var(--txt3)">WhatsApp não cadastrado</span>'
-        ) +
+          ? '<a class="mi-wa-badge" href="https://wa.me/' + waNum + '" target="_blank" rel="noopener">' + svgIcon('whatsapp') + waFmt + '</a>'
+          : '<span style="font-size:.68rem;color:var(--txt3)">WhatsApp não cadastrado</span>') +
       '</div>' +
+    '</div>' +
+    '<div class="mi-sec-body" style="border-top:1px solid var(--bd)">' +
+      '<div class="mi"><div class="mi-lbl">E-mail</div>' + mkInput('email','email',card.email) + '</div>' +
+      '<div class="mi"><div class="mi-lbl">Gênero</div>' + mkSelect('genero',['','Masculino','Feminino','Outro','Prefiro não dizer'],card.genero) + '</div>' +
+      '<div class="mi"><div class="mi-lbl">Nascimento</div>' + mkInput('nascimento','date',card.nascimento) + '</div>' +
+      '<div class="mi"><div class="mi-lbl">Cargo</div>' + mkInput('cargo','text',card.cargo) + '</div>' +
+      '<div class="mi"><div class="mi-lbl">Empresa</div>' + mkInput('empresa','text',card.empresa) + '</div>' +
+      '<div class="mi"><div class="mi-lbl">Cidade</div>' + mkInput('cidade','text',card.cidade) + '</div>' +
+      '<div class="mi full"><div class="mi-lbl">Estado</div>' + mkInput('estado','text',card.estado) + '</div>' +
+      '<div class="mi full"><div class="mi-lbl">Anotações do cliente</div>' +
+        '<textarea class="mi-input" data-field="anotacoesCliente" rows="2" style="font-size:.73rem">' + esc(card.anotacoesCliente||'') + '</textarea></div>' +
     '</div>';
 
-  // ── Grid de campos ────────────────────────────────────────
-  var gridHtml =
-    '<div class="mi-grid">' +
-      '<div class="mi"><div class="mi-lbl">Status</div><div class="mi-val">'+bSt(card.status)+'</div></div>' +
-      '<div class="mi"><div class="mi-lbl">Prioridade</div><div class="mi-val">'+bPr(card.prioridade)+'</div></div>' +
-      '<div class="mi"><div class="mi-lbl">Agente</div><div class="mi-val">'+esc(card.agente||'—')+'</div></div>' +
-      '<div class="mi"><div class="mi-lbl">Tarefa</div><div class="mi-val" style="font-size:.72rem">'+esc(card.titTarefa||'—')+'</div></div>' +
-      '<div class="mi editable vv"><div class="mi-lbl">Valor (R$)</div>'+mkInput('valor','number',card.valor)+'</div>' +
-      '<div class="mi editable"><div class="mi-lbl">Responsável</div>'+mkInput('responsavel','text',card.responsavel)+'</div>' +
-      '<div class="mi editable"><div class="mi-lbl">Produto / Peça</div>'+mkInput('produto','text',card.produto)+'</div>' +
-      '<div class="mi editable"><div class="mi-lbl">Canal</div>'+mkInput('canal','text',card.canal)+'</div>' +
-      '<div class="mi editable"><div class="mi-lbl">Transferido para</div>'+mkInput('transfPara','text',card.transfPara)+'</div>' +
-      '<div class="mi editable"><div class="mi-lbl">Status Tarefa</div>'+mkSelect('statusTarefa',TAREFA_OPT,card.statusTarefa)+'</div>' +
-      '<div class="mi editable"><div class="mi-lbl">Origem</div>'+mkSelect('origem',ORIGENS_OPT,card.origem)+'</div>' +
-      '<div class="mi editable"><div class="mi-lbl">Protocolo</div>'+mkInput('protocolo','text',card.protocolo,true)+'</div>' +
-      '<div class="mi editable full"><div class="mi-lbl">Observações</div>'+
-        '<textarea class="mi-input" data-field="obs" rows="3">'+esc(card.obs||'')+'</textarea></div>' +
+  // ── 2. Veículo ──────────────────────────────────────────────
+  var veicHtml =
+    '<div class="mi-sec-body">' +
+      '<div class="mi"><div class="mi-lbl">Fabricante / Marca</div>' + mkInput('veicFabricante','text',card.veicFabricante) + '</div>' +
+      '<div class="mi"><div class="mi-lbl">Modelo</div>' + mkInput('veicModelo','text',card.veicModelo) + '</div>' +
+      '<div class="mi"><div class="mi-lbl">Ano</div>' + mkInput('veicAno','text',card.veicAno) + '</div>' +
+      '<div class="mi"><div class="mi-lbl">Motorização</div>' + mkInput('veicMoto','text',card.veicMoto) + '</div>' +
     '</div>';
 
-  document.getElementById('m-info').innerHTML = clienteBlock + gridHtml;
+  // ── 3. Negociação ───────────────────────────────────────────
+  var negocHtml =
+    '<div class="mi-sec-body">' +
+      '<div class="mi"><div class="mi-lbl">Status</div><div class="mi-val">' + bSt(card.status) + '</div></div>' +
+      '<div class="mi"><div class="mi-lbl">Prioridade</div><div class="mi-val">' + bPr(card.prioridade) + '</div></div>' +
+      '<div class="mi"><div class="mi-lbl">Agente</div><div class="mi-val">' + esc(card.agente||'—') + '</div></div>' +
+      '<div class="mi"><div class="mi-lbl">Tarefa</div><div class="mi-val" style="font-size:.72rem">' + esc(card.titTarefa||'—') + '</div></div>' +
+      '<div class="mi"><div class="mi-lbl">Valor (R$)</div>' + mkInput('valor','number',card.valor) + '</div>' +
+      '<div class="mi"><div class="mi-lbl">Responsável</div>' + mkInput('responsavel','text',card.responsavel) + '</div>' +
+      '<div class="mi"><div class="mi-lbl">Produto / Peça</div>' + mkInput('produto','text',card.produto) + '</div>' +
+      '<div class="mi"><div class="mi-lbl">Canal</div>' + mkInput('canal','text',card.canal) + '</div>' +
+      '<div class="mi"><div class="mi-lbl">Origem</div>' + mkSelect('origem',ORIGENS_OPT,card.origem) + '</div>' +
+      '<div class="mi"><div class="mi-lbl">Status Tarefa</div>' + mkSelect('statusTarefa',TAREFA_OPT,card.statusTarefa) + '</div>' +
+      '<div class="mi"><div class="mi-lbl">Transferido para</div>' + mkInput('transfPara','text',card.transfPara) + '</div>' +
+      '<div class="mi"><div class="mi-lbl">Protocolo</div>' + mkInput('protocolo','text',card.protocolo,true) + '</div>' +
+      '<div class="mi full"><div class="mi-lbl">Observações da oportunidade</div>' +
+        '<textarea class="mi-input" data-field="obs" rows="2" style="font-size:.73rem">' + esc(card.obs||'') + '</textarea></div>' +
+    '</div>';
+
+  document.getElementById('m-info').innerHTML =
+    mkSec('cliente', 'user', 'Ficha do Cliente', true, fichaHtml) +
+    mkSec('veiculo', 'car',  'Veículo',          true, veicHtml)  +
+    mkSec('negoc',   'star', 'Negociação',        true, negocHtml);
 
   // ── Ações ─────────────────────────────────────────────────
   document.getElementById('m-acts').innerHTML =
@@ -4419,6 +4483,7 @@ function _initChatPanel(card) {
       '<div class="mc-drop" onclick="_chatAttach()">'+svgIcon('upload')+
         '<span>Arraste arquivos aqui ou clique para enviar · Imagens, docs e arquivos (máx. 10MB)</span>'+
       '</div>' +
+      '<div id="mc-rec-bar" style="display:none"></div>' +
     '</div>';
 
   // ── Listener de paste para imagem (remove antes de re-adicionar) ──
@@ -4927,7 +4992,6 @@ function _chatResize(el) { el.style.height='auto'; el.style.height=Math.min(el.s
 function _chatSearch()   { toast('Busca no chat em breve.','info'); }
 function _chatEmoji()    { toast('Seletor de emoji em breve.','info'); }
 function _chatAttach()   { toast('Anexo de arquivos em breve.','info'); }
-function _chatAudio()    { toast('Envio de áudio em breve.','info'); }
 
 // ── Imagem: file picker + paste ──────────────────────────────
 function _chatImage() {
@@ -5114,6 +5178,152 @@ function _chatBlock() {
 function _chatClear() {
   if (!confirm('Limpar todas as mensagens desta conversa?\nEsta ação não pode ser desfeita.')) return;
   toast('Limpeza de histórico em breve.', 'info');
+}
+
+// ── Toggle de seções colapsáveis da modal ────────────────────
+function _miToggleSec(btn) {
+  var id   = btn.getAttribute('data-sec');
+  var body = document.getElementById('msb-' + id);
+  if (!id || !body) return;
+  var isOpen = btn.classList.contains('open');
+  if (isOpen) {
+    btn.classList.remove('open');
+    body.style.display = 'none';
+  } else {
+    btn.classList.add('open');
+    body.style.display = '';
+  }
+}
+
+// ── Gravador de áudio (MediaRecorder API) ────────────────────
+var _recorder = {
+  stream   : null,
+  media    : null,
+  chunks   : [],
+  timer    : null,
+  seconds  : 0,
+  blob     : null,
+  mimeType : '',
+};
+
+function _chatAudio() {
+  if (_recorder.media && _recorder.media.state === 'recording') {
+    _stopRecording();
+    return;
+  }
+  // Limpa estado anterior
+  _recorder.blob = null;
+  _recorder.chunks = [];
+  _recorder.seconds = 0;
+
+  navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+    .then(function(stream) {
+      _recorder.stream = stream;
+      var mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+                  ? 'audio/webm;codecs=opus'
+                  : (MediaRecorder.isTypeSupported('audio/ogg;codecs=opus') ? 'audio/ogg;codecs=opus' : 'audio/webm');
+      _recorder.mimeType = mime;
+      _recorder.media = new MediaRecorder(stream, { mimeType: mime });
+      _recorder.media.ondataavailable = function(e) { if (e.data.size) _recorder.chunks.push(e.data); };
+      _recorder.media.onstop = _onRecordingDone;
+      _recorder.media.start(250);
+
+      // Mostra barra de gravação
+      var bar = document.getElementById('mc-rec-bar');
+      if (bar) {
+        bar.style.display = 'flex';
+        bar.innerHTML =
+          '<div class="mc-rec-dot"></div>' +
+          '<span class="mc-rec-timer" id="mc-rec-t">0:00</span>' +
+          '<span style="font-size:.72rem;color:var(--txt3);flex:1">Gravando… clique no mic para parar</span>' +
+          '<button class="mc-rec-cancel" onclick="_cancelRecording()">Cancelar</button>';
+      }
+      _recorder.timer = setInterval(function() {
+        _recorder.seconds++;
+        var m = Math.floor(_recorder.seconds / 60);
+        var s = _recorder.seconds % 60;
+        var t = document.getElementById('mc-rec-t');
+        if (t) t.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+        if (_recorder.seconds >= 120) _stopRecording(); // limite 2 min
+      }, 1000);
+
+      // Anima ícone do microfone
+      var micBtn = document.querySelector('.mc-composer .mc-ico[onclick="_chatAudio()"]');
+      if (micBtn) micBtn.style.color = '#EF4444';
+    })
+    .catch(function(err) {
+      toast('Permissão de microfone negada ou não disponível.', 'erro');
+    });
+}
+
+function _stopRecording() {
+  if (_recorder.media && _recorder.media.state === 'recording') _recorder.media.stop();
+  if (_recorder.stream) { _recorder.stream.getTracks().forEach(function(t){t.stop();}); }
+  clearInterval(_recorder.timer);
+  var micBtn = document.querySelector('.mc-composer .mc-ico[onclick="_chatAudio()"]');
+  if (micBtn) micBtn.style.color = '';
+}
+
+function _cancelRecording() {
+  _stopRecording();
+  _recorder.blob = null;
+  _recorder.chunks = [];
+  var bar = document.getElementById('mc-rec-bar');
+  if (bar) bar.style.display = 'none';
+}
+
+function _onRecordingDone() {
+  if (!_recorder.chunks.length) return;
+  _recorder.blob = new Blob(_recorder.chunks, { type: _recorder.mimeType });
+  var url = URL.createObjectURL(_recorder.blob);
+  var bar = document.getElementById('mc-rec-bar');
+  if (!bar) return;
+  bar.innerHTML =
+    '<div class="mc-rec-preview"><audio controls src="'+url+'"></audio></div>' +
+    '<button class="mc-rec-send" onclick="_sendRecording()">Enviar</button>' +
+    '<button class="mc-rec-cancel" onclick="_cancelRecording()">Cancelar</button>';
+}
+
+function _sendRecording() {
+  if (!_recorder.blob || !S._chatId) return;
+  var btn = document.querySelector('.mc-rec-send');
+  if (btn) btn.disabled = true;
+
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    var chatId  = S._chatId;
+    var dataUrl = ev.target.result;
+    var mime    = _recorder.mimeType;
+    var bar     = document.getElementById('mc-rec-bar');
+
+    // Exibe otimista
+    var msgs = document.getElementById('mc-msgs');
+    var tmpId = 'mc-tmp-' + Date.now();
+    var tmp = document.createElement('div');
+    tmp.className = 'mc-row out'; tmp.id = tmpId;
+    tmp.innerHTML = '<div class="mc-msg-wrap"><div class="mc-bubble-audio" style="padding:8px 12px;border-radius:12px;background:var(--royal);color:#fff;font-size:.74rem">🎙 Áudio · enviando...</div></div>';
+    if (msgs) { msgs.appendChild(tmp); msgs.scrollTop = msgs.scrollHeight; }
+
+    google.script.run
+      .withSuccessHandler(function(r) {
+        var el = document.getElementById(tmpId); if (el) el.remove();
+        if (r && r.ok) {
+          _CS.pollBusy = false; setTimeout(_chatPollOnce, 600);
+          if (bar) bar.style.display = 'none';
+          _recorder.blob = null; _recorder.chunks = [];
+        } else {
+          toast((r && r.erro) || 'Erro ao enviar áudio.', 'erro');
+          if (btn) btn.disabled = false;
+        }
+      })
+      .withFailureHandler(function(e) {
+        var el = document.getElementById(tmpId); if (el) el.remove();
+        toast('Erro: ' + e.message, 'erro');
+        if (btn) btn.disabled = false;
+      })
+      .enviarAudioModal(chatId, dataUrl, mime, S.authToken);
+  };
+  reader.readAsDataURL(_recorder.blob);
 }
 
 function acaoSalvarModal(btn) {

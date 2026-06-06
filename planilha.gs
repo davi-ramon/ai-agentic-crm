@@ -72,12 +72,31 @@ function atualizarStatusCRM(protocolo, novoStatus, authToken) {
  * @param {string} protocolo - Protocolo do lead (chave de busca na col F)
  * @param {Object} campos - { valor, responsavel, produto, canal, transfPara, obs, statusTarefa, origem }
  */
+/**
+ * Retorna o índice de coluna (1-based) pelo nome do header.
+ * Se não existir, cria a coluna no final com o header formatado.
+ */
+function _colByHeader(sheet, headerName) {
+  var lastCol = Math.max(sheet.getLastColumn(), 1);
+  var headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  var idx = headers.indexOf(headerName);
+  if (idx >= 0) return idx + 1;
+  // Cria nova coluna
+  var newCol = lastCol + 1;
+  var cell = sheet.getRange(1, newCol);
+  cell.setValue(headerName).setFontWeight('bold').setBackground('#1D4ED8').setFontColor('#FFFFFF');
+  sheet.setColumnWidth(newCol, 120);
+  Logger.log('[CRM] Nova coluna criada: ' + headerName + ' @ col ' + newCol);
+  return newCol;
+}
+
 function editarCampoCRM(protocolo, campos, authToken) {
   var sessao = requireAuth(authToken, 'operador');
   var sheet = getSpreadsheet().getSheetByName(CONFIG.SHEET_CRM);
   if (!sheet) return { ok: false, erro: 'Aba CRM não encontrada.' };
-  // Mapa: nome do campo → índice de coluna (1-based)
-  var CAMPO_COL = {
+
+  // Campos com coluna fixa (legacy)
+  var CAMPO_COL_FIXO = {
     valor:        2,
     responsavel:  3,
     produto:      12,
@@ -87,19 +106,30 @@ function editarCampoCRM(protocolo, campos, authToken) {
     statusTarefa: 18,
     origem:       21,
   };
+  // Campos com coluna dinâmica (ficha do cliente + veículo)
+  var CAMPOS_DINAMICOS = [
+    'email','genero','nascimento','cargo',
+    'empresa','cidade','estado','anotacoesCliente',
+    'veicFabricante','veicModelo','veicAno','veicMoto',
+  ];
+
   var dados = sheet.getDataRange().getValues();
   for (var i = 1; i < dados.length; i++) {
     if (String(dados[i][5]) === String(protocolo)) {
       var keys = Object.keys(campos);
       for (var k = 0; k < keys.length; k++) {
-        var col = CAMPO_COL[keys[k]];
-        if (col !== undefined) sheet.getRange(i + 1, col).setValue(campos[keys[k]]);
+        var field = keys[k];
+        var val   = campos[field];
+        var col   = CAMPO_COL_FIXO[field];
+        if (col !== undefined) {
+          sheet.getRange(i + 1, col).setValue(val);
+        } else if (CAMPOS_DINAMICOS.indexOf(field) >= 0) {
+          col = _colByHeader(sheet, field);
+          sheet.getRange(i + 1, col).setValue(val);
+        }
       }
       Logger.log('[CRM] editarCampoCRM: protocolo=' + protocolo + ' campos=' + JSON.stringify(keys));
-      registrarLog('auditoria', 'ok', {
-        protocolo: protocolo,
-        campos: campos,
-      }, '', {
+      registrarLog('auditoria', 'ok', { protocolo: protocolo, campos: campos }, '', {
         usuario: sessao.email,
         acao: 'editar_card_campos',
       });
