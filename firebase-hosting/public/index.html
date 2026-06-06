@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="CRM + Dashboard | Milvolts LTDA">
+<title>Milvolts — CRM</title>
+<link rel="icon" type="image/png" href="https://i.imgur.com/eBPowrl.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ─── RESET ──────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; }
+  body { font-family: 'Montserrat', sans-serif; background: #060d1a; }
+
+  /* ─── IFRAME ─────────────────────────────────────────── */
+  #app-frame {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    border: none;
+    display: block;
+    z-index: 1;
+    background: #060d1a;
+  }
+
+  /* ─── LOADING OVERLAY ────────────────────────────────── */
+  #loader {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #060d1a;
+    transition: opacity .7s ease, transform .7s ease;
+    overflow: hidden;
+  }
+
+  #loader.hide {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(1.015);
+  }
+
+  /* ── Background: malha de pontos sutis ────────────────── */
+  #loader::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(circle at 20% 30%, rgba(29,78,216,.12) 0%, transparent 50%),
+      radial-gradient(circle at 80% 70%, rgba(96,165,250,.08) 0%, transparent 50%),
+      radial-gradient(rgba(29,78,216,.08) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 28px 28px;
+    animation: bgShift 12s ease-in-out infinite alternate;
+  }
+  @keyframes bgShift {
+    from { opacity: .6; }
+    to   { opacity: 1; }
+  }
+
+  /* ── Linha de acento horizontal no topo ──────────────── */
+  #loader::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(29,78,216,.6) 20%,
+      #60A5FA 50%,
+      rgba(29,78,216,.6) 80%,
+      transparent 100%
+    );
+    animation: lineGlow 3s ease-in-out infinite alternate;
+  }
+  @keyframes lineGlow {
+    from { opacity: .4; filter: blur(0px); }
+    to   { opacity: 1;  filter: blur(1px); }
+  }
+
+  /* ── Logo ─────────────────────────────────────────────── */
+  .loader-logo-wrap {
+    position: relative;
+    margin-bottom: 48px;
+    animation: logoIn .9s cubic-bezier(.22,1,.36,1) both;
+  }
+  @keyframes logoIn {
+    from { opacity: 0; transform: translateY(20px) scale(.94); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .loader-logo {
+    height: 48px;
+    width: auto;
+    object-fit: contain;
+    display: block;
+    filter: drop-shadow(0 0 22px rgba(96,165,250,.25));
+  }
+
+  /* Linha fina abaixo do logo */
+  .loader-logo-line {
+    position: absolute;
+    bottom: -14px; left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #3B82F6, transparent);
+    animation: lineExpand .9s cubic-bezier(.22,1,.36,1) .3s both;
+  }
+  @keyframes lineExpand {
+    from { width: 0; opacity: 0; }
+    to   { width: 80px; opacity: 1; }
+  }
+
+  /* ── Mensagem de status ────────────────────────────────── */
+  .loader-status {
+    text-align: center;
+    margin-bottom: 36px;
+    animation: statusIn .7s ease .5s both;
+  }
+  @keyframes statusIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .loader-label {
+    font-size: .62rem;
+    font-weight: 700;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: rgba(96,165,250,.6);
+    margin-bottom: 10px;
+  }
+
+  .loader-msg {
+    font-size: .88rem;
+    font-weight: 400;
+    color: rgba(226,232,240,.55);
+    height: 1.3em;
+    transition: opacity .4s ease;
+    letter-spacing: .01em;
+  }
+  .loader-msg.fade { opacity: 0; }
+
+  /* ── Barra de progresso ────────────────────────────────── */
+  .loader-bar-wrap {
+    width: 200px;
+    margin-bottom: 48px;
+    animation: barIn .7s ease .6s both;
+  }
+  @keyframes barIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  .loader-bar-track {
+    height: 2px;
+    background: rgba(30,50,86,.8);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .loader-bar-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, #1D4ED8, #60A5FA);
+    box-shadow: 0 0 8px rgba(96,165,250,.5);
+    transition: width .4s ease;
+  }
+
+  /* ── Rodapé ────────────────────────────────────────────── */
+  .loader-footer {
+    position: absolute;
+    bottom: 28px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    animation: statusIn .7s ease .8s both;
+  }
+
+  .loader-footer-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: rgba(96,165,250,.4);
+    animation: dotPulse 2s ease-in-out infinite;
+  }
+  .loader-footer-dot:nth-child(2) { animation-delay: .3s; }
+  .loader-footer-dot:nth-child(3) { animation-delay: .6s; }
+  @keyframes dotPulse {
+    0%, 100% { opacity: .25; transform: scale(1); }
+    50%       { opacity: 1;   transform: scale(1.4); }
+  }
+
+  .loader-footer-text {
+    font-size: .6rem;
+    font-weight: 500;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: rgba(100,116,139,.5);
+  }
+
+  /* ── Erro de carregamento ─────────────────────────────── */
+  #loader-error {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    text-align: center;
+    padding: 0 24px;
+  }
+  #loader-error.show { display: flex; }
+  .err-icon  { font-size: 2rem; opacity: .5; }
+  .err-title { font-size: .92rem; font-weight: 600; color: #94A3B8; }
+  .err-msg   { font-size: .76rem; color: #475569; line-height: 1.6; max-width: 320px; }
+  .err-btn   {
+    margin-top: 8px;
+    padding: 10px 24px;
+    background: rgba(29,78,216,.15);
+    border: 1px solid rgba(29,78,216,.3);
+    border-radius: 8px;
+    color: #60A5FA;
+    font-family: 'Montserrat', sans-serif;
+    font-size: .78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s ease;
+  }
+  .err-btn:hover { background: rgba(29,78,216,.25); border-color: #60A5FA; }
+
+  /* ── Conteúdo central (logo + status + barra) ─────────── */
+  #loader-main { display: flex; flex-direction: column; align-items: center; }
+</style>
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════════════════
+       IFRAME — Web App do Google Apps Script
+       ══════════════════════════════════════════════════ -->
+  <iframe
+    id="app-frame"
+    src="https://script.google.com/macros/s/AKfycbziQqOzrq4xpU3IXMVz-LC9efO2dW5P2FovJdqV-AZ6ouuvvQQNyWToy6dGEBJVJfPz/exec"
+    title="CRM Milvolts"
+    allow="same-origin"
+    loading="eager"
+  ></iframe>
+  <!--
+    ╔══════════════════════════════════════════════════════╗
+    ║  ↑  EDITE A URL ACIMA para trocar o Web App         ║
+    ║  Substitua o valor do atributo src="" pelo          ║
+    ║  endereço do seu Web App do Google Apps Script.     ║
+    ╚══════════════════════════════════════════════════════╝
+  -->
+
+  <!-- ══════════════════════════════════════════════════
+       OVERLAY DE CARREGAMENTO
+       ══════════════════════════════════════════════════ -->
+  <div id="loader">
+
+    <!-- Conteúdo normal -->
+    <div id="loader-main">
+
+      <div class="loader-logo-wrap">
+        <img
+          class="loader-logo"
+          src="https://i.imgur.com/OIXtZJm.png"
+          alt="Milvolts"
+          onerror="this.src='https://i.imgur.com/sBPowrl.png'"
+        >
+        <div class="loader-logo-line"></div>
+      </div>
+
+      <div class="loader-status">
+        <div class="loader-label">Sistema de Gestão</div>
+        <div class="loader-msg" id="loader-msg">Iniciando ambiente</div>
+      </div>
+
+      <div class="loader-bar-wrap">
+        <div class="loader-bar-track">
+          <div class="loader-bar-fill" id="loader-bar"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Estado de erro (exibido se iframe falhar) -->
+    <div id="loader-error">
+      <div class="err-icon">⚠</div>
+      <div class="err-title">Falha ao carregar o sistema</div>
+      <div class="err-msg" id="err-msg">
+        Não foi possível carregar o CRM. Verifique sua conexão e tente novamente.
+      </div>
+      <button class="err-btn" onclick="recarregar()">Tentar novamente</button>
+    </div>
+
+    <div class="loader-footer">
+      <div class="loader-footer-dot"></div>
+      <div class="loader-footer-dot"></div>
+      <div class="loader-footer-dot"></div>
+      <div class="loader-footer-text">Milvolts LTDA</div>
+    </div>
+
+  </div>
+
+  <script>
+  /* ═══════════════════════════════════════════════════
+     LOADING CONTROLLER
+     ═══════════════════════════════════════════════════ */
+
+  var MESSAGES = [
+    'Iniciando ambiente',
+    'Carregando dashboard',
+    'Conectando ao banco de dados',
+    'Preparando visualizações',
+    'Sincronizando cotações',
+    'Quase pronto',
+  ];
+
+  var DURATIONS = [0, 900, 1800, 2800, 3700, 4400];
+  // ↑ ms em que cada mensagem aparece (alinhado com a barra de progresso)
+
+  var PROGRESS = [8, 22, 45, 66, 82, 96];
+  // ↑ % da barra em cada etapa
+
+  var REVEAL_AT = 5200; // ms — quando o loader começa a sumir
+
+  var _msgEl  = document.getElementById('loader-msg');
+  var _barEl  = document.getElementById('loader-bar');
+  var _loader = document.getElementById('loader');
+  var _frame  = document.getElementById('app-frame');
+
+  var _revealed = false;
+  var _timers   = [];
+
+  /* ── Agendamento das mensagens e progresso ─────────── */
+  MESSAGES.forEach(function(msg, i) {
+    var t = setTimeout(function() {
+      updateMsg(msg, PROGRESS[i]);
+    }, DURATIONS[i]);
+    _timers.push(t);
+  });
+
+  /* ── Revelação do sistema após REVEAL_AT ms ────────── */
+  var _revealTimer = setTimeout(reveal, REVEAL_AT);
+
+  /* ── Se o iframe carregar antes do timer, acelera ──── */
+  _frame.addEventListener('load', function() {
+    clearTimeout(_revealTimer);
+    // Pequena pausa para garantir que o sistema renderizou
+    setTimeout(function() {
+      if (!_revealed) {
+        updateMsg('Sistema pronto', 100);
+        setTimeout(reveal, 600);
+      }
+    }, 400);
+  });
+
+  /* ── Timeout de segurança (12s) ──────────────────────── */
+  var _safetyTimer = setTimeout(function() {
+    if (!_revealed) {
+      // Mesmo sem confirmar carga, revela (o iframe pode estar bloqueando eventos)
+      reveal();
+    }
+  }, 12000);
+
+  function updateMsg(msg, pct) {
+    _msgEl.classList.add('fade');
+    setTimeout(function() {
+      _msgEl.textContent = msg;
+      _msgEl.classList.remove('fade');
+      if (pct !== undefined) _barEl.style.width = pct + '%';
+    }, 200);
+  }
+
+  function reveal() {
+    if (_revealed) return;
+    _revealed = true;
+    clearTimeout(_safetyTimer);
+    _timers.forEach(clearTimeout);
+
+    _barEl.style.width = '100%';
+    setTimeout(function() {
+      _loader.classList.add('hide');
+      // Remove o DOM após a transição para liberar memória
+      setTimeout(function() {
+        if (_loader.parentNode) _loader.parentNode.removeChild(_loader);
+      }, 800);
+    }, 300);
+  }
+
+  function recarregar() {
+    _frame.src = _frame.src;
+    document.getElementById('loader-error').classList.remove('show');
+    document.getElementById('loader-main').style.display = 'flex';
+    _barEl.style.width = '0%';
+    _revealed = false;
+    // Reinicia sequência
+    MESSAGES.forEach(function(msg, i) {
+      _timers.push(setTimeout(function(){ updateMsg(msg, PROGRESS[i]); }, DURATIONS[i]));
+    });
+    _revealTimer = setTimeout(reveal, REVEAL_AT);
+  }
+  </script>
+
+</body>
+</html>

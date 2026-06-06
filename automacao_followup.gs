@@ -27,13 +27,20 @@
 var FU_SHEET   = 'followup_tracking';
 var FU_ETAPA   = 'orcamento_enviado';
 
+// Chaves de configuração do follow-up.
+// Campos obrigatórios ficam INTENCIONALMENTE VAZIOS — o admin deve
+// preencher pelo painel antes de ativar (followup_ativo = 'true').
 var FU_CFG_DEFAULTS = {
-  followup_ativo:           'false',
-  followup_prompt:          'Olá {{nome}}! 😊 Passando para saber se você já teve a chance de analisar nosso orçamento para {{produto}} ({{valor}}). Temos peça disponível e posso separar para você hoje. Alguma dúvida?',
-  followup_max_tentativas:  '3',
-  followup_intervalo_horas: '24',
-  followup_usar_contexto:   'false',
-  followup_etapa:           'orcamento_enviado',
+  followup_ativo:              'false',  // desligado até que campos obrigatórios sejam definidos
+  // Modo IA: 'true' → IA gera mensagem via /conversation; 'false' → template estático
+  followup_usar_ia:            'false',
+  // Prompt / template — sem default; deve ser definido pelo admin
+  followup_prompt:             '',
+  // Limites operacionais — sem default; devem ser definidos pelo admin
+  followup_max_tentativas:     '',
+  followup_intervalo_minutos:  '',
+  followup_usar_contexto:      'false',
+  followup_etapa:              '',  // etapa que dispara o follow-up — sem default
 };
 
 // ──────────────────────────────────────────────────────────────
@@ -62,16 +69,50 @@ function executarFollowUpAutomatico() {
     return { status: 'desativado', enviados: 0 };
   }
 
-  var maxTentativas  = parseInt(cfg.followup_max_tentativas) || 3;
-  var intervaloHoras = parseFloat(cfg.followup_intervalo_horas) || 24;
-  var usarContexto   = String(cfg.followup_usar_contexto).toLowerCase() === 'true';
-  var prompt         = String(cfg.followup_prompt || FU_CFG_DEFAULTS.followup_prompt);
+  var maxTentativas     = parseInt(cfg.followup_max_tentativas)    || 0;
+  var intervaloMinutos  = parseFloat(cfg.followup_intervalo_minutos) || 0;
+  var usarContexto      = String(cfg.followup_usar_contexto).toLowerCase() === 'true';
+  var usarIA            = String(cfg.followup_usar_ia).toLowerCase() === 'true';
+  var prompt            = String(cfg.followup_prompt || '').trim();
+  var etapa             = String(cfg.followup_etapa  || '').trim();
 
-  // Carrega leads elegíveis do CRM
-  var leads = _getLeadsParaFollowUp(cfg.followup_etapa || FU_ETAPA);
-  Logger.log('[FOLLOWUP] Leads em "' + (cfg.followup_etapa||FU_ETAPA) + '": ' + leads.length);
+  // ── Validação: campos obrigatórios ────────────────────────────
+  var faltam = [];
+  if (!etapa)            faltam.push('etapa de follow-up');
+  if (!maxTentativas)    faltam.push('máx. de tentativas');
+  if (!intervaloMinutos) faltam.push('intervalo em minutos');
+  if (!prompt)           faltam.push('prompt / mensagem');
+  if (faltam.length > 0) {
+    Logger.log('[FOLLOWUP] Configuração incompleta: ' + faltam.join(', ') + '. Configure em Configurações → Follow-up.');
+    return { status: 'nao_configurado', motivo: 'campos_obrigatorios_vazios', faltam: faltam };
+  }
+
+  // Carrega leads elegíveis do CRM (etapa já validada acima)
+  var leads = _getLeadsParaFollowUp(etapa);
+  Logger.log('[FOLLOWUP] Leads em "' + etapa + '": ' + leads.length);
 
   if (leads.length === 0) return { status: 'ok', enviados: 0, motivo: 'sem_leads_elegiveis' };
+
+  // ── Batch: busca nomes reais dos clientes no GPT Maker ──────────
+  var nomeClienteMap = {};
+  try {
+    var chats = gptMakerBuscarChats(300);
+    if (Array.isArray(chats)) {
+      chats.forEach(function(c) {
+        var id   = String(c.id   || c.chatId   || '').trim();
+        var nome = String(c.name || c.chatName || c.clientName || '').trim();
+        if (id && nome) nomeClienteMap[id] = nome;
+      });
+    }
+    Logger.log('[FOLLOWUP] Nomes buscados: ' + Object.keys(nomeClienteMap).length + ' chats.');
+  } catch (ce) {
+    Logger.log('[FOLLOWUP] Aviso: não foi possível buscar nomes de clientes: ' + ce.message);
+  }
+
+  // Injeta nome_cliente em cada lead
+  leads.forEach(function(lead) {
+    lead.nome_cliente = nomeClienteMap[lead.contato] || '';
+  });
 
   // Carrega tracking existente
   var tracking = _getTracking();
@@ -100,13 +141,13 @@ function executarFollowUpAutomatico() {
         return;
       }
 
-      // Verifica se passou o intervalo mínimo desde a última tentativa
+      // Verifica se passou o intervalo mínimo desde a última tentativa (em MINUTOS)
       if (track.ultima) {
-        var diffHoras = (Date.now() - new Date(track.ultima).getTime()) / 3600000;
-        if (diffHoras < intervaloHoras) { pulados++; return; }
+        var diffMinutos = (Date.now() - new Date(track.ultima).getTime()) / 60000;
+        if (diffMinutos < intervaloMinutos) { pulados++; return; }
       }
 
-      // Verifica se o cliente respondeu após a última tentativa (verificação básica via GPT Maker)
+      // Verifica se o cliente respondeu após a última tentativa
       if (track.ultima && chatId) {
         var respondeu = _verificarRespostaCliente(chatId, track.ultima);
         if (respondeu) {
@@ -118,34 +159,41 @@ function executarFollowUpAutomatico() {
         }
       }
 
-      // Obtém contexto da conversa (se configurado)
-      var contexto = '';
-      if (usarContexto && chatId) {
-        try {
-          contexto = _getContextoConversa(chatId);
-        } catch (ce) {
-          Logger.log('[FOLLOWUP] Erro ao obter contexto de ' + proto + ': ' + ce.message);
-        }
-      }
-
-      // Gera e envia a mensagem
+      // ── Gera e envia a mensagem ──────────────────────────────────
       var novaTentativa = track.tentativas + 1;
-      var mensagem = _gerarMensagemFollowUp(lead, contexto, novaTentativa, prompt);
+      var mensagemEnviada = '';
 
-      // stop-human garante que a IA não interfira (bot está em modo humano pelo orçamento)
-      // Não precisamos mudar o modo, apenas enviamos diretamente
-      gptMakerEnviarMensagem(chatId, mensagem);
+      if (usarIA) {
+        // Modo IA: envia o prompt como instrução para o agente GPT Maker processar
+        // O agente lê o histórico da conversa (contextId = chatId) e gera resposta personalizada
+        Logger.log('[FOLLOWUP] Modo IA → gerando resposta para ' + proto + ' (chatId: ' + chatId + ')');
+        var instrucao = _gerarMensagemFollowUp(lead, '', novaTentativa, prompt); // substitui {{nome}} etc. na instrução
+        var respIA = gptMakerGerarResposta(chatId, instrucao);
+        mensagemEnviada = String((respIA && respIA.message) || '').trim();
+        if (!mensagemEnviada) throw new Error('GPT Maker retornou mensagem vazia para ' + proto);
+        gptMakerEnviarMensagem(chatId, mensagemEnviada);
+        Logger.log('[FOLLOWUP] ✓ IA gerou e enviou mensagem para ' + proto + ': "' + mensagemEnviada.substring(0, 80) + '..."');
+      } else {
+        // Modo estático: usa template com substituição de variáveis
+        var contexto = '';
+        if (usarContexto && chatId) {
+          try { contexto = _getContextoConversa(chatId); }
+          catch (ce) { Logger.log('[FOLLOWUP] Erro ao obter contexto de ' + proto + ': ' + ce.message); }
+        }
+        mensagemEnviada = _gerarMensagemFollowUp(lead, contexto, novaTentativa, prompt);
+        gptMakerEnviarMensagem(chatId, mensagemEnviada);
+        Logger.log('[FOLLOWUP] ✓ Mensagem estática enviada para ' + proto);
+      }
 
       // Registra o tracking
       _atualizarTracking(proto, chatId, lead, novaTentativa, 'ativo', '');
 
-      // Log
       registrarLog('followup_enviado', 'ok', {
         protocolo: proto, tentativa: novaTentativa, chatId: chatId,
-        produto: lead.produto, valor: lead.valor,
+        produto: lead.produto, valor: lead.valor, modo: usarIA ? 'ia' : 'estatico',
       }, '');
 
-      Logger.log('[FOLLOWUP] ✓ ' + proto + ' — tentativa ' + novaTentativa + '/' + maxTentativas + ' enviada.');
+      Logger.log('[FOLLOWUP] ✓ ' + proto + ' — tentativa ' + novaTentativa + '/' + maxTentativas + ' (' + (usarIA ? 'IA' : 'estático') + ').');
       enviados++;
 
       Utilities.sleep(500); // anti-rate-limit
@@ -246,8 +294,8 @@ function _verificarRespostaCliente(chatId, ultimaDataISO) {
 function _gerarMensagemFollowUp(lead, contexto, tentativa, prompt) {
   var msg = String(prompt || FU_CFG_DEFAULTS.followup_prompt);
 
-  // Extrai nome do responsável (primeiro nome)
-  var nome = String(lead.responsavel || lead.whatsapp || 'cliente').split(' ')[0];
+  // Extrai nome real do cliente (via GPT Maker batch) ou fallback
+  var nome = String(lead.nome_cliente || lead.responsavel || lead.whatsapp || 'cliente').split(' ')[0];
   var produto = lead.produto || 'peça solicitada';
   var valor = lead.valor ? 'R$ ' + String(lead.valor).replace(/[^\d,\.]/g, '') : '';
 

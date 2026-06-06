@@ -7,11 +7,19 @@
  */
 
 function getSpreadsheet() {
+  // 1. Bound script (executado a partir da própria planilha)
   var ss = null;
-  try { ss = SpreadsheetApp.getActiveSpreadsheet(); }
-  catch (_) { ss = null; }
+  try { ss = SpreadsheetApp.getActiveSpreadsheet(); } catch (_) { ss = null; }
   if (ss) return ss;
-  return SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+  // 2. Web App / trigger externo: lê ID do Script Properties
+  var id = (PropertiesService.getScriptProperties().getProperty('spreadsheet_id') || '').trim();
+  if (!id) throw new Error(
+    'Planilha não configurada. ' +
+    'Acesse: Apps Script Editor → Configurações do projeto → Propriedades do script ' +
+    '→ adicione spreadsheet_id = <ID_DA_PLANILHA>. ' +
+    'Ou pelo painel admin → Configurações → 🔒 Credenciais.'
+  );
+  return SpreadsheetApp.openById(id);
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -340,8 +348,7 @@ function _criarAbaConfigs(ss) {
     ['icone_url',      'https://i.imgur.com/eBPowrl.png',  'Ícone da aba do navegador (favicon)'],
     ['empresa_nome',   'Milvolts LTDA',                    'Nome da empresa'],
     ['tema_padrao',    'claro',                            'Tema padrão: "claro" ou "escuro"'],
-    ['bot_token',      CONFIG.TELEGRAM_BOT_TOKEN || '',    'Token do bot Telegram (sobrescreve config.gs)'],
-    ['chat_id',        CONFIG.TELEGRAM_GROUP_ID  || '',    'Chat ID do Telegram (sobrescreve config.gs)'],
+    // bot_token e chat_id REMOVIDOS — ficam no Script Properties (telegram_bot_token / telegram_chat_id)
     ['push_conferir_pecas', 'true',                        'Notificação push: Conferir Peças'],
     ['push_transferir_para_humano', 'true',                'Notificação push: Transferir para humano'],
     ['push_nao_sabe_responder', 'true',                    'Notificação push: Não sabe responder'],

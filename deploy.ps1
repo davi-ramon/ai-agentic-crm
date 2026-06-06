@@ -24,8 +24,10 @@ if (-not (Test-Path $SECRETS_FILE)) {
 }
 . $SECRETS_FILE
 
-# ── Deployment ID fixo (Apps Script) ────────────────────────────
-$DEPLOYMENT_ID = "AKfycbxK1lQm3ZwnXRdUqdDN_9URR8IrrTchZCYmtF6THn8"
+# ── IDs de implantação (Apps Script) ────────────────────────────
+# ID de produção — usado pelo Netlify e pelo Firebase Hosting. NUNCA mudar.
+# Atualizado com: clasp deploy --deploymentId $DEPLOYMENT_ID
+$DEPLOYMENT_ID = "AKfycbziQqOzrq4xpU3IXMVz-LC9efO2dW5P2FovJdqV-AZ6ouuvvQQNyWToy6dGEBJVJfPz"
 
 # ── Mensagem padrao com timestamp ────────────────────────────────
 if (-not $Message) {
@@ -61,16 +63,18 @@ if (-not $SomenteGitHub) {
     } else {
         OK "Codigo enviado ao Apps Script."
 
-        STEP "Criando nova versao de implantacao..."
+        STEP "Atualizando snapshot versionado..."
 
+        # Atualiza o deployment versionado (aceita clasp deploy).
+        # O @HEAD já foi atualizado pelo push acima — Firebase Hosting usa essa URL.
         clasp deploy --deploymentId $DEPLOYMENT_ID --description $Message 2>&1 | ForEach-Object { INFO $_ }
 
         if ($LASTEXITCODE -ne 0) {
             FAIL "clasp deploy falhou."
         } else {
-            OK "Versao publicada."
-            INFO "URL producao : https://script.google.com/macros/s/$DEPLOYMENT_ID/exec"
-            INFO "URL dev/teste: https://script.google.com/macros/s/$DEPLOYMENT_ID/dev"
+            OK "Deploy completo."
+            INFO "URL Web App (Netlify + Firebase): https://script.google.com/macros/s/$DEPLOYMENT_ID/exec"
+            INFO "Firebase Hosting               : https://crm-milvolts.web.app"
         }
     }
 }

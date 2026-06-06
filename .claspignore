@@ -1,0 +1,10 @@
+doc-api-gpt-maker/**
+firebase-hosting/**
+*.md
+.git/**
+node_modules/**
+*.xlsx
+*.pdf
+*.ps1
+*.log
+log-do-console/**

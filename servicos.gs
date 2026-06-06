@@ -40,12 +40,13 @@ var _gptMakerCfgCache_ = null; // Cache para a execução atual (evita leituras 
  */
 function getGPTMakerConfig_() {
   if (_gptMakerCfgCache_) return _gptMakerCfgCache_;
+  // Lê EXCLUSIVAMENTE do Script Properties — sem fallback para config.gs
   var props = PropertiesService.getScriptProperties();
   _gptMakerCfgCache_ = {
-    apiKey:      (props.getProperty('gptmaker_api_key')      || CONFIG.GPTMAKER_API_KEY      || '').trim(),
-    agentId:     (props.getProperty('gptmaker_agent_id')     || CONFIG.GPTMAKER_AGENT_ID     || '').trim(),
-    workspaceId: (props.getProperty('gptmaker_workspace_id') || CONFIG.GPTMAKER_WORKSPACE_ID || '').trim(),
-    channelId:   (props.getProperty('gptmaker_channel_id')   || CONFIG.GPTMAKER_CHANNEL_ID   || '').trim(),
+    apiKey:      (props.getProperty('gptmaker_api_key')      || '').trim(),
+    agentId:     (props.getProperty('gptmaker_agent_id')     || '').trim(),
+    workspaceId: (props.getProperty('gptmaker_workspace_id') || '').trim(),
+    channelId:   (props.getProperty('gptmaker_channel_id')   || '').trim(),
     baseUrl:     CONFIG.GPTMAKER_BASE_URL,
   };
   return _gptMakerCfgCache_;
@@ -200,6 +201,34 @@ function gptMakerEnviarMensagem(chatId, mensagem) {
 }
 
 // ──────────────────────────────────────────────────────────────
+//  GERAR RESPOSTA VIA IA (follow-up inteligente)
+//  POST /agent/{agentId}/conversation
+// ──────────────────────────────────────────────────────────────
+
+/**
+ * Solicita à IA que gere uma mensagem personalizada com base no histórico
+ * de conversa de um cliente (contextId) e no prompt de instrução fornecido.
+ *
+ * A IA lê o histórico do chat, internaliza a instrução e retorna a mensagem.
+ * Custa 1 crédito da API por chamada.
+ *
+ * @param {string} contextId  - ID do chat/contexto do cliente (= chatId)
+ * @param {string} instrucao  - Prompt de instrução para a IA (até ~255 chars recomendado)
+ * @returns {Object}          { message: string, images: [], audios: [] }
+ */
+function gptMakerGerarResposta(contextId, instrucao) {
+  var _gm = getGPTMakerConfig_();
+  if (!_gm.agentId) throw new Error('Agent ID do GPT Maker não configurado.');
+  Logger.log('[GPTMAKER] Gerando resposta IA → agentId: ' + _gm.agentId + ' | contextId: ' + contextId);
+  var resp = chamarGPTMaker('POST', '/agent/' + _gm.agentId + '/conversation', {
+    contextId: String(contextId),
+    prompt:    String(instrucao),
+  });
+  Logger.log('[GPTMAKER] Resposta IA gerada: ' + JSON.stringify(String((resp && resp.message) || '').substring(0, 120)));
+  return resp;
+}
+
+// ──────────────────────────────────────────────────────────────
 //  LISTAR TODOS OS CHATS (com paginação)
 //  Itera páginas até obter maxTotal chats ou não houver mais
 // ──────────────────────────────────────────────────────────────
@@ -324,10 +353,11 @@ function gptMakerGetMensagens(chatId, limit) {
 }
 
 function getTelegramConfig_() {
-  var configs = getConfigs();
+  // Lê EXCLUSIVAMENTE do Script Properties — token não fica na planilha
+  var props = PropertiesService.getScriptProperties();
   return {
-    botToken: String(configs.bot_token || CONFIG.TELEGRAM_BOT_TOKEN || '').trim(),
-    chatId: String(configs.chat_id || CONFIG.TELEGRAM_GROUP_ID || '').trim(),
+    botToken: (props.getProperty('telegram_bot_token') || '').trim(),
+    chatId:   (props.getProperty('telegram_chat_id')   || '').trim(),
   };
 }
 
@@ -583,8 +613,8 @@ function verificarSaudeCompleta(authToken) {
   // ── 4. Telegram ──────────────────────────────────────────
   try {
     var tg = getTelegramConfig_();
-    if (!tg.botToken || tg.botToken.indexOf('YOUR_') > -1) {
-      res.push({ servico: 'Telegram', ok: false, erro: 'TELEGRAM_BOT_TOKEN não configurado em config.gs' });
+    if (!tg.botToken) {
+      res.push({ servico: 'Telegram', ok: false, erro: 'telegram_bot_token não configurado. Acesse Configurações → 🔒 Credenciais.' });
     } else {
       var resp = UrlFetchApp.fetch('https://api.telegram.org/bot' + tg.botToken + '/getMe', { muteHttpExceptions: true });
       var tgRes = JSON.parse(resp.getContentText());
@@ -623,61 +653,78 @@ function verificarSaudeCompleta(authToken) {
 // ──────────────────────────────────────────────────────────────
 
 /**
- * Retorna as configurações atuais de integração para o painel admin.
- * Token JWT é retornado completo pois só admins têm acesso e
- * o valor está no Script Properties (não na planilha).
+ * Retorna TODAS as credenciais sensíveis do Script Properties para o painel admin.
+ * Valores lidos exclusivamente do Script Properties — sem fallback para config.gs.
  */
 function getIntegracaoConfig(authToken) {
   requireAuth(authToken, 'admin');
-  var gm = getGPTMakerConfig_();
+  var props = PropertiesService.getScriptProperties();
+  var get   = function(k) { return (props.getProperty(k) || '').trim(); };
   return {
-    gptmaker_api_key:      gm.apiKey,
-    gptmaker_agent_id:     gm.agentId,
-    gptmaker_workspace_id: gm.workspaceId,
-    gptmaker_channel_id:   gm.channelId,
-    // Flag informativa: onde estão os valores (Properties ou config.gs)
-    source_api_key:      PropertiesService.getScriptProperties().getProperty('gptmaker_api_key')      ? 'properties' : 'config.gs',
-    source_agent_id:     PropertiesService.getScriptProperties().getProperty('gptmaker_agent_id')     ? 'properties' : 'config.gs',
-    source_workspace_id: PropertiesService.getScriptProperties().getProperty('gptmaker_workspace_id') ? 'properties' : 'config.gs',
-    source_channel_id:   PropertiesService.getScriptProperties().getProperty('gptmaker_channel_id')   ? 'properties' : 'config.gs',
+    // Google Sheets
+    spreadsheet_id:        get('spreadsheet_id'),
+    // GPT Maker
+    gptmaker_api_key:      get('gptmaker_api_key'),
+    gptmaker_agent_id:     get('gptmaker_agent_id'),
+    gptmaker_workspace_id: get('gptmaker_workspace_id'),
+    gptmaker_channel_id:   get('gptmaker_channel_id'),
+    // Telegram
+    telegram_bot_token:    get('telegram_bot_token'),
+    telegram_chat_id:      get('telegram_chat_id'),
+    // Operacional
+    whatsapp_operacional:  get('whatsapp_operacional'),
   };
 }
 
 /**
- * Salva as configurações de integração no Script Properties do Apps Script.
- * Campos vazios são ignorados (mantém o valor existente).
- * Para limpar um valor, passe explicitamente a string 'CLEAR'.
+ * Salva credenciais sensíveis no Script Properties do Apps Script.
+ * Cobre: Spreadsheet ID, GPT Maker, Telegram, WhatsApp operacional.
+ *
+ * Regras:
+ *   - Campo vazio/ausente → mantém o valor existente (não apaga)
+ *   - Campo = 'CLEAR'    → remove a propriedade
+ *   - Qualquer outro valor → salva/sobrescreve
  */
 function salvarIntegracaoConfig(dados, authToken) {
   var sessao = requireAuth(authToken, 'admin');
   var props  = PropertiesService.getScriptProperties();
 
-  var mapa = {
-    gptmaker_api_key:      dados.gptmaker_api_key,
-    gptmaker_agent_id:     dados.gptmaker_agent_id,
-    gptmaker_workspace_id: dados.gptmaker_workspace_id,
-    gptmaker_channel_id:   dados.gptmaker_channel_id,
-  };
+  // Todas as chaves gerenciadas por esta função
+  var CHAVES = [
+    'spreadsheet_id',
+    'gptmaker_api_key',
+    'gptmaker_agent_id',
+    'gptmaker_workspace_id',
+    'gptmaker_channel_id',
+    'telegram_bot_token',
+    'telegram_chat_id',
+    'whatsapp_operacional',
+  ];
 
-  Object.keys(mapa).forEach(function(chave) {
-    var val = mapa[chave];
-    if (val === undefined || val === null) return; // ignora campos não enviados
-    if (String(val).trim() === '') return;          // ignora campos vazios (não apaga)
-    if (String(val).toUpperCase() === 'CLEAR') {
-      props.deleteProperty(chave);                  // 'CLEAR' remove a chave
-      Logger.log('[INTEG] Propriedade removida: ' + chave);
+  var atualizados = [];
+  CHAVES.forEach(function(chave) {
+    var val = dados[chave];
+    if (val === undefined || val === null) return;
+    var valStr = String(val).trim();
+    if (valStr === '') return;                          // vazio → mantém existente
+    if (valStr.toUpperCase() === 'CLEAR') {
+      props.deleteProperty(chave);
+      Logger.log('[INTEG] Removido: ' + chave);
+      atualizados.push(chave + ':CLEAR');
     } else {
-      props.setProperty(chave, String(val).trim());
-      Logger.log('[INTEG] Propriedade salva: ' + chave + ' (' + String(val).substring(0, 12) + '...)');
+      props.setProperty(chave, valStr);
+      Logger.log('[INTEG] Salvo: ' + chave + ' (' + valStr.substring(0, 12) + '...)');
+      atualizados.push(chave);
     }
   });
 
-  // Invalida cache para que a próxima chamada recarregue os novos valores
+  // Invalida cache GPT Maker para recarregar novos valores
   _gptMakerCfgCache_ = null;
 
-  registrarLog('config_integracao', 'ok', {
-    campos_atualizados: Object.keys(mapa).filter(function(k) { return mapa[k] && mapa[k] !== ''; }),
-  }, '', { usuario: sessao.email, acao: 'salvar_integracao' });
+  registrarLog('config_integracao', 'ok', { campos: atualizados }, '', {
+    usuario: sessao.email,
+    acao: 'salvar_integracao',
+  });
 
-  return { ok: true };
+  return { ok: true, atualizados: atualizados };
 }

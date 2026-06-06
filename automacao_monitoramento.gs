@@ -23,29 +23,30 @@
  * ============================================================
  */
 
-// ── DEFAULTS DE CONFIGURAÇÃO ─────────────────────────────────
+// ── CHAVES DE CONFIGURAÇÃO ───────────────────────────────────
+// Valores padrão INTENCIONALMENTE VAZIOS para campos obrigatórios.
+// O monitoramento não é ativado sem que o admin preencha explicitamente
+// as etapas e limites no painel → Configurações → Monitoramento.
 var MON_DEFAULTS = {
-  // ── Etapas monitoradas (configuráveis via front-end) ─────────
-  // Slugs exatamente como aparecem na coluna Status da planilha
-  // (espaços → underscores, minúsculas)
-  mon_etapa_1: 'conferir_pecas',      // etapa principal — ativa autopreservação
-  mon_etapa_2: 'orcamento_enviado',
-  mon_etapa_3: 'follow_up',
-  // ── Limites de alerta por etapa ──────────────────────────────
-  mon_alerta_conferir_pecas:    '300',
-  mon_alerta_orcamento_enviado: '150',
-  mon_alerta_follow_up:         '120',
-  mon_alerta_global:            '400',
-  // ── Limites críticos (aciona autopreservação) ─────────────────
-  mon_critico_conferir_pecas:   '500',
-  mon_critico_orcamento_enviado:'250',
-  mon_critico_follow_up:        '200',
-  mon_critico_global:           '700',
+  // ── Etapas: sem defaults — devem ser configuradas explicitamente ─
+  mon_etapa_1: '',   // etapa principal — ativa autopreservação quando crítica
+  mon_etapa_2: '',
+  mon_etapa_3: '',
+  // ── Limites de alerta: sem defaults ──────────────────────────
+  mon_alerta_conferir_pecas:    '',
+  mon_alerta_orcamento_enviado: '',
+  mon_alerta_follow_up:         '',
+  mon_alerta_global:            '',
+  // ── Limites críticos: sem defaults ───────────────────────────
+  mon_critico_conferir_pecas:   '',
+  mon_critico_orcamento_enviado:'',
+  mon_critico_follow_up:        '',
+  mon_critico_global:           '',
   // ── Comportamento ─────────────────────────────────────────────
-  mon_ativo:                   'true',
+  mon_ativo:                   'false', // desligado até que etapas/limites sejam definidos
   mon_autopreservacao_ativa:   'false',
   mon_autopreservacao_motivo:  '',
-  mon_intervalo_alerta_horas:  '4',
+  mon_intervalo_alerta_horas:  '',      // sem default — deve ser configurado
   mon_ultimo_alerta:           '',
 };
 
@@ -75,6 +76,23 @@ function monitorarFunil() {
     return { status: 'desativado' };
   }
 
+  // ── Validação: campos obrigatórios ────────────────────────────
+  var etapa1 = String(cfg.mon_etapa_1 || '').trim();
+  if (!etapa1) {
+    Logger.log('[MONITOR] Configuração incompleta: Etapa 1 não definida. Configure em Configurações → Monitoramento.');
+    return { status: 'nao_configurado', motivo: 'etapa_1_nao_definida' };
+  }
+  var temLimite = ['mon_alerta_conferir_pecas','mon_alerta_orcamento_enviado','mon_alerta_follow_up','mon_alerta_global']
+    .some(function(k) { return parseInt(cfg[k]) > 0; });
+  if (!temLimite) {
+    Logger.log('[MONITOR] Configuração incompleta: nenhum limite de alerta definido. Configure em Configurações → Monitoramento.');
+    return { status: 'nao_configurado', motivo: 'limites_nao_definidos' };
+  }
+  if (!parseInt(cfg.mon_intervalo_alerta_horas)) {
+    Logger.log('[MONITOR] Configuração incompleta: intervalo de alerta não definido.');
+    return { status: 'nao_configurado', motivo: 'intervalo_nao_definido' };
+  }
+
   // Conta leads por etapa
   var contagens = _contarLeadsPorEtapa();
   Logger.log('[MONITOR] Contagens: ' + JSON.stringify(contagens));
@@ -84,41 +102,56 @@ function monitorarFunil() {
 
   // Verifica limites por etapa — usando slugs configurados via front-end
   var _slug = function(v) { return String(v||'').toLowerCase().replace(/[\s\-]+/g,'_'); };
-  var etapas = [
-    { id: _slug(cfg.mon_etapa_1 || 'conferir_pecas'),    label: _labelEtapa_(cfg.mon_etapa_1 || 'conferir_pecas'),    alerta: 'mon_alerta_conferir_pecas',    critico: 'mon_critico_conferir_pecas',    principal: true  },
-    { id: _slug(cfg.mon_etapa_2 || 'orcamento_enviado'), label: _labelEtapa_(cfg.mon_etapa_2 || 'orcamento_enviado'), alerta: 'mon_alerta_orcamento_enviado', critico: 'mon_critico_orcamento_enviado', principal: false },
-    { id: _slug(cfg.mon_etapa_3 || 'follow_up'),         label: _labelEtapa_(cfg.mon_etapa_3 || 'follow_up'),         alerta: 'mon_alerta_follow_up',         critico: 'mon_critico_follow_up',         principal: false },
-  ];
+  var etapas = [];
+  if (String(cfg.mon_etapa_1 || '').trim()) etapas.push(
+    { id: _slug(cfg.mon_etapa_1), label: _labelEtapa_(cfg.mon_etapa_1), alerta: 'mon_alerta_conferir_pecas',    critico: 'mon_critico_conferir_pecas',    principal: true  }
+  );
+  if (String(cfg.mon_etapa_2 || '').trim()) etapas.push(
+    { id: _slug(cfg.mon_etapa_2), label: _labelEtapa_(cfg.mon_etapa_2), alerta: 'mon_alerta_orcamento_enviado', critico: 'mon_critico_orcamento_enviado', principal: false }
+  );
+  if (String(cfg.mon_etapa_3 || '').trim()) etapas.push(
+    { id: _slug(cfg.mon_etapa_3), label: _labelEtapa_(cfg.mon_etapa_3), alerta: 'mon_alerta_follow_up',         critico: 'mon_critico_follow_up',         principal: false }
+  );
 
   etapas.forEach(function(e) {
     var count     = contagens[e.id] || 0;
-    var limAlerta = parseInt(cfg[e.alerta])  || 999;
-    var limCrit   = parseInt(cfg[e.critico]) || 999;
-    if (count >= limCrit) {
+    var limAlerta = parseInt(cfg[e.alerta])  || 0;
+    var limCrit   = parseInt(cfg[e.critico]) || 0;
+    if (limCrit > 0 && count >= limCrit) {
       // Autopreservação só é ativada pela etapa principal (etapa 1)
       if (e.principal) {
         criticos.push(e.label + ': ' + count + ' leads (crítico ≥' + limCrit + ')');
       } else {
         alertas.push(e.label + ': ' + count + ' leads (crítico ≥' + limCrit + ' — apenas alerta)');
       }
-    } else if (count >= limAlerta) {
+    } else if (limAlerta > 0 && count >= limAlerta) {
       alertas.push(e.label + ': ' + count + ' leads (alerta ≥' + limAlerta + ')');
     }
   });
 
   // Verifica total global
   var totalAtivos = Object.values(contagens).reduce(function(a, b) { return a + b; }, 0);
-  var limAlerGlobal = parseInt(cfg.mon_alerta_global) || 999;
-  var limCritGlobal = parseInt(cfg.mon_critico_global) || 999;
-  if (totalAtivos >= limCritGlobal) criticos.push('📊 Total CRM: ' + totalAtivos + ' leads (crítico ≥' + limCritGlobal + ')');
-  else if (totalAtivos >= limAlerGlobal) alertas.push('📊 Total CRM: ' + totalAtivos + ' leads (alerta ≥' + limAlerGlobal + ')');
+  var limAlerGlobal = parseInt(cfg.mon_alerta_global)  || 0;
+  var limCritGlobal = parseInt(cfg.mon_critico_global) || 0;
+  if (limCritGlobal > 0 && totalAtivos >= limCritGlobal) criticos.push('📊 Total CRM: ' + totalAtivos + ' leads (crítico ≥' + limCritGlobal + ')');
+  else if (limAlerGlobal > 0 && totalAtivos >= limAlerGlobal) alertas.push('📊 Total CRM: ' + totalAtivos + ' leads (alerta ≥' + limAlerGlobal + ')');
 
   var result = { status: 'ok', alertas: alertas.length, criticos: criticos.length, contagens: contagens };
 
   if (criticos.length === 0 && alertas.length === 0) {
     Logger.log('[MONITOR] ✓ Funil dentro dos limites.');
 
-    // Se havia autopreservação ativa e agora está ok, não desativa automaticamente (requer ação humana)
+    // Se a autopreservação estava ativa mas o pipeline voltou ao normal, limpa a flag automaticamente.
+    // NOTA: o agente GPT Maker NÃO é reativado aqui — isso requer ação manual do admin para garantir
+    // que alguém tomou conhecimento e organizou o CRM antes de reexpor o agente.
+    if (String(cfg.mon_autopreservacao_ativa).toLowerCase() === 'true') {
+      salvarConfig('mon_autopreservacao_ativa', 'false');
+      salvarConfig('mon_autopreservacao_motivo', '');
+      Logger.log('[MONITOR] ✓ Autopreservação auto-limpa — pipeline dentro dos limites. Agente GPT Maker NÃO foi reativado (requer ação manual do admin).');
+      registrarLog('autopreservacao_auto_limpa', 'ok', { contagens: contagens }, '', { acao: 'auto_limpar_flag' });
+      result.autopreservacao_limpa = true;
+    }
+
     return result;
   }
 

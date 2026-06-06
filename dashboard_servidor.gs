@@ -166,7 +166,8 @@ function _getCrmDataInterno() {
         status:      _col(r,'Status'),
         valor:       valor,
         responsavel: _col(r,'Responsável'),
-        contato:     _col(r,'Contato'),            // coluna real: "Contato"
+        contato:     _col(r,'Contato'),            // coluna real: "Contato" (chatId GPT Maker)
+        nomeCliente: _col(r,'Nome do Cliente') || _col(r,'Nome') || _col(r,'Cliente') || '—',
         prioridade:  _col(r,'Prioridade'),
         protocolo:   _col(r,'Protocolo'),
         oportunidade:_col(r,'Nome da Oportunidade') || '—',
@@ -492,30 +493,30 @@ function salvarConfigNotificacao(chave, habilitado, authToken) {
  */
 function getConfigsTelegram(authToken) {
   requireAuth(authToken, 'admin');
-  var configs = getConfigs();
+  // Lê exclusivamente do Script Properties — token não fica na planilha
+  var props = PropertiesService.getScriptProperties();
   return {
-    botToken: configs.bot_token || CONFIG.TELEGRAM_BOT_TOKEN || '',
-    chatId:   configs.chat_id   || CONFIG.TELEGRAM_GROUP_ID  || '',
+    botToken: (props.getProperty('telegram_bot_token') || '').trim(),
+    chatId:   (props.getProperty('telegram_chat_id')   || '').trim(),
   };
 }
 
 function salvarConfigsTelegram(dados, authToken) {
-  var sessao = requireAuth(authToken, 'admin');
+  var sessao   = requireAuth(authToken, 'admin');
+  var props    = PropertiesService.getScriptProperties();
   var botToken = String((dados && dados.bot_token) || '').trim();
-  var chatId   = String((dados && dados.chat_id) || '').trim();
+  var chatId   = String((dados && dados.chat_id)   || '').trim();
   if (!botToken) throw new Error('Informe o bot token do Telegram.');
   if (!chatId)   throw new Error('Informe o chat ID do Telegram.');
 
-  salvarConfig('bot_token', botToken);
-  salvarConfig('chat_id', chatId);
+  // Salva no Script Properties (não na planilha — é dado sensível)
+  props.setProperty('telegram_bot_token', botToken);
+  props.setProperty('telegram_chat_id',   chatId);
 
   registrarLog('auditoria', 'ok', {
-    bot_token: botToken ? 'atualizado' : '',
-    chat_id: chatId,
-  }, '', {
-    usuario: sessao.email,
-    acao: 'alterar_config_telegram',
-  });
+    telegram_bot_token: 'atualizado',
+    telegram_chat_id:   chatId,
+  }, '', { usuario: sessao.email, acao: 'alterar_config_telegram' });
   return { ok: true };
 }
 
@@ -656,4 +657,84 @@ function _pushValue_(payload, keys) {
     }
   }
   return '';
+}
+
+// ──────────────────────────────────────────────────────────────
+//  MODAL CHAT — Funções chamadas pelo painel de chat da modal
+// ──────────────────────────────────────────────────────────────
+
+/**
+ * Retorna as últimas N mensagens de um chat para exibir no painel da modal.
+ * @param {string} chatId    - ID do chat GPT Maker (channelId-phone)
+ * @param {string} authToken
+ * @returns {Array} Array completo com todos os campos da API GPT Maker
+ */
+function getModalChatMessages(chatId, authToken) {
+  requireAuth(authToken, 'operador');
+  if (!chatId || chatId.length < 10) {
+    Logger.log('[MODAL-CHAT] chatId inválido: ' + chatId);
+    return [];
+  }
+  try {
+    Logger.log('[MODAL-CHAT] getModalChatMessages chatId=' + chatId);
+    var msgs = gptMakerGetMensagens(chatId, 50);
+    // Repassa todos os campos da API GPT Maker sem perda de informação
+    var result = (msgs || []).map(function(m) {
+      return {
+        id:                           String(m.id || ''),
+        sequence:                     m.sequence || 0,
+        role:                         String(m.role || 'user'),
+        type:                         String(m.type || 'TEXT'),
+        conversationNotificationType: m.conversationNotificationType || null,
+        text:                         String(m.text || m.content || m.message || ''),
+        midiaContent:                 m.midiaContent || null,
+        audioUrl:                     m.audioUrl || null,
+        imageUrl:                     m.imageUrl || null,
+        videoUrl:                     m.videoUrl || null,
+        documentUrl:                  m.documentUrl || null,
+        fileName:                     m.fileName || null,
+        assistantName:                m.assistantName || null,
+        agentName:                    m.agentName || null,
+        userName:                     m.userName || null,
+        assistantAvatar:              m.assistantAvatar || null,
+        agentAvatar:                  m.agentAvatar || null,
+        time:                         m.time || null,   // Unix ms
+        width:                        m.width || null,
+        height:                       m.height || null,
+        protocol:                     m.protocol || null,
+      };
+    });
+    // Garante ordem por sequence, fallback por time
+    result.sort(function(a, b) {
+      var sa = a.sequence || 0, sb = b.sequence || 0;
+      if (sa && sb && sa !== sb) return sa - sb;
+      return (a.time || 0) - (b.time || 0);
+    });
+    Logger.log('[MODAL-CHAT] ✓ ' + result.length + ' mensagens retornadas para chatId=' + chatId);
+    return result;
+  } catch(e) {
+    Logger.log('[MODAL-CHAT] Erro ao buscar mensagens: ' + e.message);
+    return [];
+  }
+}
+
+/**
+ * Envia uma mensagem via GPT Maker a partir do painel de chat da modal.
+ * @param {string} chatId  - ID do chat GPT Maker
+ * @param {string} texto   - Texto a enviar
+ * @param {string} authToken
+ * @returns {{ ok: boolean, erro?: string }}
+ */
+function enviarMensagemModal(chatId, texto, authToken) {
+  requireAuth(authToken, 'operador');
+  if (!chatId || !texto) return { ok: false, erro: 'chatId ou texto inválido' };
+  try {
+    Logger.log('[MODAL-CHAT] enviarMensagemModal chatId=' + chatId + ' txt=' + texto.substring(0, 60));
+    gptMakerEnviarMensagem(chatId, texto);
+    Logger.log('[MODAL-CHAT] ✓ Mensagem enviada');
+    return { ok: true };
+  } catch(e) {
+    Logger.log('[MODAL-CHAT] ✗ Erro: ' + e.message);
+    return { ok: false, erro: e.message };
+  }
 }

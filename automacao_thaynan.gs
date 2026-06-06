@@ -30,12 +30,13 @@ function devolverTodosAtendimentos(payload) {
   // ──────────────────────────────────────────────
   //  Módulo "Define as variáveis" (ID: 10 no blueprint)
   // ──────────────────────────────────────────────
+  var _gm = getGPTMakerConfig_();
   const variaveis = {
-    api_key:         CONFIG.GPTMAKER_API_KEY,
-    agenteID:        CONFIG.GPTMAKER_AGENT_ID,
-    chatID:          CONFIG.GPTMAKER_CHANNEL_ID,
+    api_key:         _gm.apiKey,
+    agenteID:        _gm.agentId,
+    chatID:          _gm.channelId,
     max_conversas:   CONFIG.MAX_CONVERSAS_DEVOLVER,
-    whatsappThaynan: CONFIG.WHATSAPP_THAYNAN,
+    whatsappThaynan: (PropertiesService.getScriptProperties().getProperty('whatsapp_operacional') || '').trim(),
   };
 
   Logger.log('[DEVOLVER] Variáveis definidas: ' + JSON.stringify(variaveis));
