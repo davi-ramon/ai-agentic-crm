@@ -337,6 +337,38 @@ function telegramEnviarMensagem(chatId, texto, parseMode) {
 // ──────────────────────────────────────────────────────────────
 
 /**
+ * Envia uma imagem para o chat.
+ * @param {string} chatId    - ID do chat GPT Maker
+ * @param {string} imageUrl  - URL pública da imagem
+ * @param {string} caption   - Legenda opcional
+ * @returns {Object} { success: true } ou erro
+ */
+function gptMakerEnviarImagem(chatId, imageUrl, caption) {
+  var payload = { imageUrl: imageUrl };
+  if (caption) payload.message = caption;
+  Logger.log('[GPTMAKER] Enviando imagem → chatId: ' + chatId + ' imageUrl: ' + imageUrl);
+  return chamarGPTMaker('POST', '/chat/' + chatId + '/send-message', payload);
+}
+
+/**
+ * Retorna a última mensagem de cada chatId informado (para checar atividade).
+ * @param {string[]} chatIds
+ * @returns {Object} { chatId: { time, role, type, id } }
+ */
+function gptMakerGetLastMessages(chatIds) {
+  var result = {};
+  (chatIds || []).forEach(function(chatId) {
+    try {
+      var msgs = gptMakerGetMensagens(chatId, 1, 1);
+      if (msgs && msgs.length) {
+        result[chatId] = { time: msgs[0].time||0, role: msgs[0].role||'user', type: msgs[0].type||'TEXT', id: msgs[0].id||'' };
+      }
+    } catch(e) {}
+  });
+  return result;
+}
+
+/**
  * Lê as últimas N mensagens de um chat.
  * @param {string} chatId - ID do chat
  * @param {number} limit  - Máximo de mensagens por página (padrão: 20)

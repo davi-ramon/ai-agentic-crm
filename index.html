@@ -627,6 +627,24 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);min-height:100vh
 .mc-load-more:hover:not(:disabled){border-color:var(--royal);color:var(--royal);}
 .mc-load-more:disabled{opacity:.5;cursor:not-allowed;}
 .mc-load-more .sp{width:11px;height:11px;border-width:1.5px;}
+/* Composer: image attachment strip */
+#mc-att-strip{padding:5px 10px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-top:1px solid var(--bd);}
+.mc-att-thumb{position:relative;display:inline-flex;flex-direction:column;align-items:center;}
+.mc-att-thumb img{width:52px;height:52px;object-fit:cover;border-radius:7px;border:1px solid var(--bd);display:block;}
+.mc-att-rm{position:absolute;top:-6px;right:-6px;width:17px;height:17px;border-radius:50%;background:#EF4444;border:2px solid var(--surface);color:#fff;font-size:.75rem;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1;z-index:1;}
+.mc-att-info{font-size:.62rem;color:var(--txt3);max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px;}
+/* Kanban unread badge */
+.kc{position:relative;overflow:visible!important;}
+.kc-unread{position:absolute;top:-6px;left:-4px;min-width:18px;height:18px;border-radius:99px;background:#EF4444;color:#fff;font-size:.59rem;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--bg,#f4f6fb);z-index:3;animation:urdp 2.5s ease-in-out infinite;}
+[data-theme="dark"] .kc-unread{border-color:var(--surface);}
+@keyframes urdp{0%,100%{transform:scale(1);}50%{transform:scale(1.18);}}
+/* Chat context menu */
+.mc-hd-acts{position:relative;}
+.mc-ctx{position:absolute;top:calc(100% + 5px);right:0;min-width:188px;background:var(--surface);border:1px solid var(--bd);border-radius:10px;padding:4px 0;box-shadow:0 8px 28px rgba(0,0,0,.14);z-index:300;animation:mIn .13s ease;}
+.mc-ctx button{display:flex;align-items:center;gap:9px;width:100%;padding:8px 14px;background:none;border:none;font-size:.77rem;font-family:var(--f);color:var(--txt);cursor:pointer;transition:background var(--t);text-align:left;white-space:nowrap;}
+.mc-ctx button:hover{background:var(--rd);}
+.mc-ctx .mc-ctx-d{color:#EF4444;}
+.mc-ctx-sep{height:1px;background:var(--bd);margin:3px 0;}
 
 /* ── TRANSFERÊNCIAS ───────────────────────────────────── */
 .tf-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px;}
@@ -3273,6 +3291,8 @@ function mkKCard(r, st) {
   var nextSt = curIdx < STAGES.length - 1  ? STAGES[curIdx + 1] : null;
 
   c.innerHTML =
+    /* Badge de não lidas (canto superior esquerdo) */
+    '<span class="kc-unread" id="kcu-'+proto+'" style="display:none">0</span>' +
     /* Quick action hover buttons (top-right) */
     '<div class="kc-qa" onclick="event.stopPropagation()">' +
       '<button class="kc-qa-btn g" title="Venda realizada" onclick="quickActK(\'venda_fechada\',\''+proto+'\',this,event)">' + svgIcon('check-circle') + '</button>' +
@@ -4333,6 +4353,8 @@ function openModal(proto) {
 
   // ── Painel de chat ────────────────────────────────────────
   _initChatPanel(card);
+  // Limpa badge de não lidas ao abrir
+  _clearUnread(String(card['Contato'] || card.contato || '').trim());
 
   document.getElementById('modal-ov').classList.add('open');
   setTimeout(function(){ var m=document.getElementById('mc-msgs'); if(m) m.scrollTop=m.scrollHeight; },120);
@@ -4381,13 +4403,15 @@ function _initChatPanel(card) {
 
     // ── Composer ──
     '<div class="mc-composer-wrap">' +
+      '<input type="file" id="mc-file-img" accept="image/*" style="display:none" onchange="_chatFileChange(this)">' +
+      '<div id="mc-att-strip" style="display:none"></div>' +
       '<div class="mc-composer">' +
         '<div class="mc-input-wrap">' +
           '<button class="mc-ico" title="Emoji" onclick="_chatEmoji()">'+svgIcon('emoji')+'</button>' +
           '<textarea class="mc-txt" id="mc-input" placeholder="Digite uma mensagem..." rows="1"' +
             ' onkeydown="_chatKeydown(event)" oninput="_chatResize(this)"></textarea>' +
+          '<button class="mc-ico" title="Imagem (ou cole Ctrl+V)" onclick="_chatImage()">'+svgIcon('image')+'</button>' +
           '<button class="mc-ico" title="Anexar" onclick="_chatAttach()">'+svgIcon('paperclip')+'</button>' +
-          '<button class="mc-ico" title="Imagem" onclick="_chatImage()">'+svgIcon('image')+'</button>' +
         '</div>' +
         '<button class="mc-ico" title="Áudio" onclick="_chatAudio()" style="margin-left:2px">'+svgIcon('mic')+'</button>' +
         '<button class="mc-send" id="mc-send-btn" title="Enviar" onclick="_chatSend()">'+svgIcon('send')+'</button>' +
@@ -4396,6 +4420,13 @@ function _initChatPanel(card) {
         '<span>Arraste arquivos aqui ou clique para enviar · Imagens, docs e arquivos (máx. 10MB)</span>'+
       '</div>' +
     '</div>';
+
+  // ── Listener de paste para imagem (remove antes de re-adicionar) ──
+  var mcPanel = document.getElementById('m-chat-panel');
+  if (mcPanel) {
+    mcPanel.removeEventListener('paste', _chatHandlePaste);
+    mcPanel.addEventListener('paste', _chatHandlePaste);
+  }
 
   // ── Carrega mensagens ──
   if (chatId && chatId.length > 10) {
@@ -4412,16 +4443,21 @@ function _initChatPanel(card) {
 var _CS = {
   chatId   : null,
   seenIds  : {},   // { id → true } — IDs já renderizados
+  messages : [],   // todos os objetos msg para export
   page     : 1,    // última página de histórico carregada
   maxPage  : 10,
   hasMore  : true,
   pollTimer: null,
   pollBusy : false,
 };
+// ── Unread badge store ─────────────────────────────────────
+var _unread = {}; // { proto → count }
+var _pendingImg = null; // { dataUrl, mime, name } — imagem prestes a ser enviada
 
 function _chatLoad(chatId) {
   _CS.chatId = chatId;
   _CS.seenIds = {};
+  _CS.messages = [];
   _CS.page = 1;
   _CS.hasMore = true;
   _CS.pollBusy = false;
@@ -4459,6 +4495,12 @@ function _chatPollOnce() {
       var novo = msgs.filter(function(m){ return m.id && !_CS.seenIds[m.id]; });
       if (!novo.length) return;
       novo.forEach(function(m){ _CS.seenIds[m.id] = true; });
+      // Alerta sonoro para mensagens inbound (do cliente)
+      var hasInbound = novo.some(function(m){ return m.role === 'user' && m.type !== 'NOTIFICATION'; });
+      if (hasInbound) {
+        _notifBeep();
+        _addUnread(_CS.chatId, novo.filter(function(m){ return m.role==='user' && m.type!=='NOTIFICATION'; }).length);
+      }
       _chatAppendMsgs(novo);
     })
     .withFailureHandler(function(){ _CS.pollBusy = false; })
@@ -4478,7 +4520,7 @@ function _chatAppendMsgs(msgs) {
   var st = el.querySelector('.mc-state');
   if (st) st.remove();
   var html = '';
-  msgs.forEach(function(m){ html += _chatRenderMsg(m); });
+  msgs.forEach(function(m){ html += _chatRenderMsg(m); _CS.messages.push(m); });
   el.insertAdjacentHTML('beforeend', html);
   if (atBottom) el.scrollTop = el.scrollHeight;
 }
@@ -4505,6 +4547,7 @@ function _chatPrependMsgs(msgs) {
       }
     }
     html+=_chatRenderMsg(m);
+    _CS.messages.push(m);
   });
   var anchor = el.querySelector('.mc-load-more-wrap');
   if (anchor) { anchor.insertAdjacentHTML('afterend', html); }
@@ -4567,8 +4610,8 @@ function _chatRender(msgs) {
     if (sa && sb && sa!==sb) return sa-sb;
     return (a.time||0)-(b.time||0);
   });
-  // Registra IDs vistos
-  msgs.forEach(function(m){ if(m.id) _CS.seenIds[m.id]=true; });
+  // Registra IDs vistos e armazena para export
+  msgs.forEach(function(m){ if(m.id){ _CS.seenIds[m.id]=true; _CS.messages.push(m); } });
   _CS.hasMore = msgs.length >= 9;
 
   // Botão "carregar mais" no topo
@@ -4813,55 +4856,265 @@ function _chatSend() {
   var inp = document.getElementById('mc-input');
   var btn = document.getElementById('mc-send-btn');
   if (!inp || !btn) return;
-  var txt = (inp.value || '').trim();
-  if (!txt) return;
+  var txt    = (inp.value || '').trim();
+  var hasImg = !!_pendingImg;
+  if (!txt && !hasImg) return;
   if (!S._chatId) { toast('ChatId não disponível para este lead.','erro'); return; }
 
   _btnStart(btn);
-  var now   = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-  var tmpId = 'mc-tmp-'+Date.now();
-  var msgs  = document.getElementById('mc-msgs');
-
-  // Adiciona otimisticamente
-  var tmp = document.createElement('div');
-  tmp.className='mc-row out'; tmp.id=tmpId;
-  tmp.innerHTML='<div class="mc-msg-wrap"><div class="mc-bubble">'+esc(txt).replace(/\n/g,'<br>')+'</div>'+
-    '<div class="mc-ts">'+now+' · enviando...</div></div>';
-  if (msgs) { msgs.appendChild(tmp); msgs.scrollTop=msgs.scrollHeight; }
-
-  inp.value=''; _chatResize(inp);
-
+  var now    = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  var tmpId  = 'mc-tmp-'+Date.now();
+  var msgEl  = document.getElementById('mc-msgs');
   var chatId = S._chatId;
-  google.script.run
-    .withSuccessHandler(function(r) {
-      _btnDone(btn, !!(r&&r.ok));
-      if (r && r.ok) {
-        // Remove optimistic e traz mensagem real via poll imediato
-        var el=document.getElementById(tmpId); if(el) el.remove();
-        _CS.pollBusy = false;
-        setTimeout(_chatPollOnce, 600);
-      } else {
-        var el=document.getElementById(tmpId);
-        if(el){var ts=el.querySelector('.mc-ts');if(ts) ts.textContent=now+' ✗ erro';}
-        toast((r&&r.erro)||'Erro ao enviar mensagem.','erro');
-      }
-    })
-    .withFailureHandler(function(e) {
-      _btnDone(btn,false);
-      var el=document.getElementById(tmpId); if(el){var ts=el.querySelector('.mc-ts');if(ts)ts.textContent=now+' ✗';}
-      toast('Erro: '+e.message,'erro');
-    })
-    .enviarMensagemModal(chatId, txt, S.authToken);
+
+  // Conteúdo otimista
+  var tmp = document.createElement('div');
+  tmp.className = 'mc-row out'; tmp.id = tmpId;
+  var optContent = hasImg
+    ? '<img src="'+_pendingImg.dataUrl+'" style="max-width:160px;max-height:160px;border-radius:8px;display:block">'
+    : '<div class="mc-bubble">'+esc(txt).replace(/\n/g,'<br>')+'</div>';
+  tmp.innerHTML = '<div class="mc-msg-wrap">'+optContent+'<div class="mc-ts">'+now+' · enviando...</div></div>';
+  if (msgEl) { msgEl.appendChild(tmp); msgEl.scrollTop = msgEl.scrollHeight; }
+
+  // Captura e limpa estado antes do callback assíncrono
+  inp.value = ''; _chatResize(inp);
+  var imgSnap = _pendingImg ? { dataUrl: _pendingImg.dataUrl, mime: _pendingImg.mime, name: _pendingImg.name } : null;
+  _chatRemoveImg();
+
+  function onOk(r) {
+    _btnDone(btn, !!(r && r.ok));
+    var el = document.getElementById(tmpId); if (el) el.remove();
+    if (r && r.ok) {
+      _CS.pollBusy = false; setTimeout(_chatPollOnce, 600);
+    } else {
+      var errDiv = document.createElement('div');
+      errDiv.className = 'mc-row out';
+      errDiv.innerHTML = '<div class="mc-msg-wrap"><div class="mc-bubble" style="background:#FEE2E2;color:#DC2626">Não enviado — tente novamente</div><div class="mc-ts">'+now+' ✗</div></div>';
+      if (msgEl) msgEl.appendChild(errDiv);
+      toast((r && r.erro) || 'Erro ao enviar.', 'erro');
+    }
+  }
+  function onFail(e) {
+    _btnDone(btn, false);
+    var el = document.getElementById(tmpId); if (el) el.remove();
+    toast('Erro: ' + e.message, 'erro');
+  }
+
+  if (imgSnap) {
+    google.script.run
+      .withSuccessHandler(onOk)
+      .withFailureHandler(onFail)
+      .enviarImagemModal(chatId, imgSnap.dataUrl, imgSnap.mime, S.authToken);
+    // Se também há texto, envia em sequência
+    if (txt) {
+      setTimeout(function() {
+        google.script.run
+          .withSuccessHandler(function(){})
+          .withFailureHandler(function(){})
+          .enviarMensagemModal(chatId, txt, S.authToken);
+      }, 800);
+    }
+  } else {
+    google.script.run
+      .withSuccessHandler(onOk)
+      .withFailureHandler(onFail)
+      .enviarMensagemModal(chatId, txt, S.authToken);
+  }
 }
 
 function _chatKeydown(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();_chatSend();} }
 function _chatResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,88)+'px'; }
 function _chatSearch()   { toast('Busca no chat em breve.','info'); }
-function _chatMenu()     { toast('Opções em breve.','info'); }
 function _chatEmoji()    { toast('Seletor de emoji em breve.','info'); }
 function _chatAttach()   { toast('Anexo de arquivos em breve.','info'); }
-function _chatImage()    { toast('Envio de imagem em breve.','info'); }
 function _chatAudio()    { toast('Envio de áudio em breve.','info'); }
+
+// ── Imagem: file picker + paste ──────────────────────────────
+function _chatImage() {
+  var fi = document.getElementById('mc-file-img');
+  if (fi) fi.click();
+}
+function _chatFileChange(input) {
+  var file = input && input.files && input.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) { toast('Selecione apenas imagens.','erro'); return; }
+  if (file.size > 4194304) { toast('Imagem muito grande. Máximo: 4MB.','erro'); return; }
+  var reader = new FileReader();
+  reader.onload = function(ev){ _chatShowImgPreview(ev.target.result, file.type, file.name); };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+function _chatHandlePaste(e) {
+  var items = e.clipboardData && e.clipboardData.items;
+  if (!items) return;
+  for (var i = 0; i < items.length; i++) {
+    if (items[i].type.indexOf('image') !== -1) {
+      e.preventDefault();
+      var file = items[i].getAsFile();
+      if (!file) return;
+      if (file.size > 4194304) { toast('Imagem muito grande. Máximo: 4MB.','erro'); return; }
+      var reader = new FileReader();
+      reader.onload = function(ev){ _chatShowImgPreview(ev.target.result, file.type, file.name || 'imagem.jpg'); };
+      reader.readAsDataURL(file);
+      break;
+    }
+  }
+}
+function _chatShowImgPreview(dataUrl, mime, name) {
+  _pendingImg = { dataUrl: dataUrl, mime: mime || 'image/jpeg', name: name || 'imagem.jpg' };
+  var strip = document.getElementById('mc-att-strip');
+  if (!strip) return;
+  strip.style.display = 'flex';
+  strip.innerHTML =
+    '<div class="mc-att-thumb">' +
+      '<img src="'+dataUrl+'" alt="preview">' +
+      '<button class="mc-att-rm" onclick="_chatRemoveImg()" title="Remover">×</button>' +
+    '</div>' +
+    '<div class="mc-att-info"><span>'+esc(name||'imagem')+'</span><br><span style="opacity:.65">Ctrl+Enter ou ▶ para enviar</span></div>';
+  var ta = document.getElementById('mc-input');
+  if (ta) ta.focus();
+}
+function _chatRemoveImg() {
+  _pendingImg = null;
+  var strip = document.getElementById('mc-att-strip');
+  if (strip) { strip.style.display = 'none'; strip.innerHTML = ''; }
+}
+
+// ── Alerta sonoro (Web Audio API) ────────────────────────────
+function _notifBeep() {
+  try {
+    var ac = new (window.AudioContext || window.webkitAudioContext)();
+    var osc = ac.createOscillator();
+    var g   = ac.createGain();
+    osc.connect(g); g.connect(ac.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1080, ac.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(640, ac.currentTime + 0.09);
+    g.gain.setValueAtTime(0, ac.currentTime);
+    g.gain.linearRampToValueAtTime(0.18, ac.currentTime + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.24);
+    osc.start(ac.currentTime);
+    osc.stop(ac.currentTime + 0.26);
+  } catch(e) {}
+}
+
+// ── Badge de não lidas ───────────────────────────────────────
+function _addUnread(chatId, inc) {
+  if (!chatId) return;
+  var card = S.crm && S.crm.find(function(r){
+    return String(r['Contato']||r.contato||'').trim() === String(chatId).trim();
+  });
+  if (!card) return;
+  var proto = String(card.protocolo);
+  _unread[proto] = (_unread[proto] || 0) + (inc || 1);
+  _renderUnreadBadge(proto);
+}
+function _clearUnread(chatId) {
+  if (!chatId) return;
+  var card = S.crm && S.crm.find(function(r){
+    return String(r['Contato']||r.contato||'').trim() === String(chatId).trim();
+  });
+  if (!card) return;
+  var proto = String(card.protocolo);
+  _unread[proto] = 0;
+  _renderUnreadBadge(proto);
+}
+function _renderUnreadBadge(proto) {
+  var badge = document.getElementById('kcu-' + proto);
+  if (!badge) return;
+  var count = _unread[proto] || 0;
+  if (count > 0) {
+    badge.style.display = 'flex';
+    badge.textContent = count > 9 ? '9+' : String(count);
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+// ── Menu de opções do chat ───────────────────────────────────
+function _chatMenu(btn) {
+  var existing = document.getElementById('mc-ctx-menu');
+  if (existing) { existing.remove(); return; }
+  var menu = document.createElement('div');
+  menu.id = 'mc-ctx-menu';
+  menu.className = 'mc-ctx';
+  menu.innerHTML =
+    '<button onclick="document.getElementById(\'mc-ctx-menu\').remove();_chatExport(\'json\')">'+
+      svgIcon('download')+'Exportar JSON</button>'+
+    '<button onclick="document.getElementById(\'mc-ctx-menu\').remove();_chatExport(\'txt\')">'+
+      svgIcon('list')+'Exportar TXT</button>'+
+    '<div class="mc-ctx-sep"></div>'+
+    '<button class="mc-ctx-d" onclick="document.getElementById(\'mc-ctx-menu\').remove();_chatBlock()">'+
+      svgIcon('x-circle')+'Bloquear contato</button>'+
+    '<button class="mc-ctx-d" onclick="document.getElementById(\'mc-ctx-menu\').remove();_chatClear()">'+
+      svgIcon('trash')+'Limpar mensagens</button>';
+  var hd = btn.closest('.mc-hd-acts') || btn.parentNode;
+  hd.style.position = 'relative';
+  hd.appendChild(menu);
+  setTimeout(function() {
+    function handler(e) {
+      if (!menu.contains(e.target) && e.target !== btn) {
+        menu.remove(); document.removeEventListener('click', handler);
+      }
+    }
+    document.addEventListener('click', handler);
+  }, 0);
+}
+
+// ── Exportar conversa ────────────────────────────────────────
+function _chatExport(fmt) {
+  var chatId = _CS.chatId || S._chatId || 'chat';
+  var proto  = S.modalCard ? String(S.modalCard.protocolo) : 'chat';
+  var msgs   = _CS.messages || [];
+  if (!msgs.length) { toast('Nenhuma mensagem para exportar.','info'); return; }
+  var now = new Date().toLocaleString('pt-BR');
+  var blob, filename;
+  if (fmt === 'json') {
+    var data = { exportedAt: new Date().toISOString(), chatId: chatId, protocolo: proto, totalMessages: msgs.length, messages: msgs };
+    blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    filename = 'conversa-'+proto+'-'+Date.now()+'.json';
+  } else {
+    var notifMap = { TRANSFER_QUEUE:'Transferido para fila', HUMAN_TAKEOVER:'Atendimento humano assumido', BOT_TAKEOVER:'IA retomou atendimento', CONVERSATION_START:'Conversa iniciada', CONVERSATION_END:'Conversa encerrada', TRANSFER:'Chat transferido' };
+    var lines = ['=== Conversa exportada em '+now+' ===', 'Protocolo: '+proto, 'ChatID: '+chatId, ''];
+    msgs.forEach(function(m) {
+      if (m.type === 'NOTIFICATION') {
+        var lbl = notifMap[m.conversationNotificationType] || (m.conversationNotificationType || 'Evento');
+        var ts  = m.time ? new Date(m.time).toLocaleString('pt-BR') : '';
+        lines.push('[EVENTO] '+lbl+(ts?' — '+ts:''));
+      } else {
+        var ts2  = m.time ? new Date(m.time).toLocaleString('pt-BR') : '—';
+        var who  = m.role === 'assistant' ? (m.assistantName || m.agentName || 'Assistente') : (m.userName || 'Cliente');
+        var dir  = m.role === 'assistant' ? '→' : '←';
+        var body = m.text || ('['+(m.type||'?')+']');
+        if (m.imageUrl)    body += ' [imagem: '+m.imageUrl+']';
+        if (m.audioUrl)    body += ' [áudio: '+m.audioUrl+']';
+        if (m.videoUrl)    body += ' [vídeo: '+m.videoUrl+']';
+        if (m.documentUrl) body += ' [doc: '+m.documentUrl+']';
+        lines.push('['+ts2+'] '+dir+' '+who+': '+body);
+      }
+    });
+    blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+    filename = 'conversa-'+proto+'-'+Date.now()+'.txt';
+  }
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+  toast('Download iniciado: '+filename, 'ok');
+}
+
+// ── Bloquear / Limpar (com confirmação) ──────────────────────
+function _chatBlock() {
+  if (!confirm('Bloquear este contato?\nIsto impedirá que ele envie novas mensagens pelo assistente.')) return;
+  toast('Funcionalidade de bloqueio em breve.', 'info');
+}
+function _chatClear() {
+  if (!confirm('Limpar todas as mensagens desta conversa?\nEsta ação não pode ser desfeita.')) return;
+  toast('Limpeza de histórico em breve.', 'info');
+}
 
 function acaoSalvarModal(btn) {
   if (!S.modalCard) return;
@@ -4905,8 +5158,13 @@ function closeModal(e) {
   document.getElementById('modal-ov').classList.remove('open');
   S.modalCard = null;
   _chatStopPolling();
-  _CS.chatId  = null;
-  _CS.seenIds = {};
+  _CS.chatId   = null;
+  _CS.seenIds  = {};
+  _CS.messages = [];
+  _pendingImg  = null;
+  // Fecha menu flutuante se aberto
+  var ctx = document.getElementById('mc-ctx-menu');
+  if (ctx) ctx.remove();
 }
 
 function acaoModal(acao) {

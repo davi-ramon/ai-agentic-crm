@@ -738,3 +738,40 @@ function enviarMensagemModal(chatId, texto, authToken) {
     return { ok: false, erro: e.message };
   }
 }
+
+/**
+ * Faz upload de uma imagem (base64 do cliente) para o Google Drive,
+ * obtém URL pública e envia via GPT Maker.
+ * @param {string} chatId    - ID do chat GPT Maker
+ * @param {string} dataUrl   - data:image/...;base64,... (vindo do cliente)
+ * @param {string} mimeType  - ex: "image/jpeg" ou "image/png"
+ * @param {string} authToken
+ * @returns {{ ok: boolean, imageUrl?: string, erro?: string }}
+ */
+function enviarImagemModal(chatId, dataUrl, mimeType, authToken) {
+  requireAuth(authToken, 'operador');
+  if (!chatId || !dataUrl) return { ok: false, erro: 'chatId ou imagem ausente' };
+  try {
+    // Remove cabeçalho data URL
+    var raw = dataUrl.replace(/^data:[^;]+;base64,/, '');
+    var ext = (mimeType === 'image/png') ? 'png' : (mimeType === 'image/gif' ? 'gif' : 'jpg');
+    var fileName = 'crm-img-' + Date.now() + '.' + ext;
+
+    // Upload para Google Drive
+    var bytes = Utilities.base64Decode(raw);
+    var blob  = Utilities.newBlob(bytes, mimeType || 'image/jpeg', fileName);
+    var file  = DriveApp.createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    var imageUrl = 'https://drive.google.com/uc?export=view&id=' + file.getId();
+
+    Logger.log('[MODAL-CHAT] enviarImagemModal → uploaded: ' + imageUrl);
+
+    // Envia para GPT Maker com imageUrl
+    gptMakerEnviarImagem(chatId, imageUrl, '');
+    Logger.log('[MODAL-CHAT] ✓ Imagem enviada ao GPT Maker');
+    return { ok: true, imageUrl: imageUrl };
+  } catch(e) {
+    Logger.log('[MODAL-CHAT] ✗ Erro ao enviar imagem: ' + e.message);
+    return { ok: false, erro: e.message };
+  }
+}
