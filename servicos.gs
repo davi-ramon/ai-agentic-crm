@@ -337,15 +337,18 @@ function telegramEnviarMensagem(chatId, texto, parseMode) {
 // ──────────────────────────────────────────────────────────────
 
 /**
- * Lê as últimas N mensagens de um chat (para verificar resposta do cliente).
+ * Lê as últimas N mensagens de um chat.
  * @param {string} chatId - ID do chat
- * @param {number} limit  - Máximo de mensagens (padrão: 20)
- * @returns {Array} Lista de mensagens [ { role, content, createdAt } ]
+ * @param {number} limit  - Máximo de mensagens por página (padrão: 20)
+ * @param {number} page   - Página (1 = mais recente, 2 = anterior, etc.)
+ * @returns {Array} Lista de mensagens da API GPT Maker
  */
-function gptMakerGetMensagens(chatId, limit) {
+function gptMakerGetMensagens(chatId, limit, page) {
   limit = limit || 20;
-  Logger.log('[GPTMAKER] Buscando mensagens → chatId: ' + chatId + ' limit: ' + limit);
-  var resp = chamarGPTMaker('GET', '/chat/' + chatId + '/messages?limit=' + limit, null);
+  page  = page  || 1;
+  var qs = '/messages?limit=' + limit + (page > 1 ? '&page=' + page : '');
+  Logger.log('[GPTMAKER] Buscando mensagens → chatId: ' + chatId + ' limit: ' + limit + ' page: ' + page);
+  var resp = chamarGPTMaker('GET', '/chat/' + chatId + qs, null);
   if (Array.isArray(resp))               return resp;
   if (resp && Array.isArray(resp.data))  return resp.data;
   if (resp && Array.isArray(resp.messages)) return resp.messages;

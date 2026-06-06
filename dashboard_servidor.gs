@@ -664,21 +664,22 @@ function _pushValue_(payload, keys) {
 // ──────────────────────────────────────────────────────────────
 
 /**
- * Retorna as últimas N mensagens de um chat para exibir no painel da modal.
+ * Retorna uma página de mensagens de um chat para exibir no painel da modal.
  * @param {string} chatId    - ID do chat GPT Maker (channelId-phone)
  * @param {string} authToken
- * @returns {Array} Array completo com todos os campos da API GPT Maker
+ * @param {number} page      - Página (1 = mais recente, 2 = anterior…)
+ * @returns {Array} Array com todos os campos da API GPT Maker
  */
-function getModalChatMessages(chatId, authToken) {
+function getModalChatMessages(chatId, authToken, page) {
   requireAuth(authToken, 'operador');
   if (!chatId || chatId.length < 10) {
     Logger.log('[MODAL-CHAT] chatId inválido: ' + chatId);
     return [];
   }
+  page = page || 1;
   try {
-    Logger.log('[MODAL-CHAT] getModalChatMessages chatId=' + chatId);
-    var msgs = gptMakerGetMensagens(chatId, 50);
-    // Repassa todos os campos da API GPT Maker sem perda de informação
+    Logger.log('[MODAL-CHAT] getModalChatMessages chatId=' + chatId + ' page=' + page);
+    var msgs = gptMakerGetMensagens(chatId, 10, page);
     var result = (msgs || []).map(function(m) {
       return {
         id:                           String(m.id || ''),
@@ -698,19 +699,18 @@ function getModalChatMessages(chatId, authToken) {
         userName:                     m.userName || null,
         assistantAvatar:              m.assistantAvatar || null,
         agentAvatar:                  m.agentAvatar || null,
-        time:                         m.time || null,   // Unix ms
+        time:                         m.time || null,
         width:                        m.width || null,
         height:                       m.height || null,
         protocol:                     m.protocol || null,
       };
     });
-    // Garante ordem por sequence, fallback por time
     result.sort(function(a, b) {
       var sa = a.sequence || 0, sb = b.sequence || 0;
       if (sa && sb && sa !== sb) return sa - sb;
       return (a.time || 0) - (b.time || 0);
     });
-    Logger.log('[MODAL-CHAT] ✓ ' + result.length + ' mensagens retornadas para chatId=' + chatId);
+    Logger.log('[MODAL-CHAT] ✓ ' + result.length + ' msgs, page=' + page + ', chatId=' + chatId);
     return result;
   } catch(e) {
     Logger.log('[MODAL-CHAT] Erro ao buscar mensagens: ' + e.message);
