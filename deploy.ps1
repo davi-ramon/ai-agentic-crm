@@ -27,7 +27,7 @@ if (-not (Test-Path $SECRETS_FILE)) {
 # ── IDs de implantação (Apps Script) ────────────────────────────
 # ID de produção — usado pelo Netlify e pelo Firebase Hosting. NUNCA mudar.
 # Atualizado com: clasp deploy --deploymentId $DEPLOYMENT_ID
-$DEPLOYMENT_ID = "AKfycbziQqOzrq4xpU3IXMVz-LC9efO2dW5P2FovJdqV-AZ6ouuvvQQNyWToy6dGEBJVJfPz"
+$DEPLOYMENT_ID = "AKfycbx3f9I7H8Rgf8eHLKkstVtIEPXTZHfaNVkuSKUX0WSGubP5wvZz1J72onQpNh6E8mw"
 
 # ── Mensagem padrao com timestamp ────────────────────────────────
 if (-not $Message) {

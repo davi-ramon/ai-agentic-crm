@@ -53,3 +53,11 @@ build/
 
 # ── CLASP BUILD (gerado pelo clasp, não é source) ───────────────
 .clasp-build/
+
+# ── FIREBASE ─────────────────────────────────────────────────────
+.firebase/
+
+# ── MEMORY.md — NÃO ignorar (deve ir ao GitHub para contexto de IA)
+# MEMORY.md está no .claspignore (*.md) → não vai ao GAS
+# Não está em firebase-hosting/public/ → não vai ao Firebase Hosting
+# Conclusão: MEMORY.md vai SOMENTE para o GitHub — comportamento correto.
