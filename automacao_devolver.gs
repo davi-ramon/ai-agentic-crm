@@ -45,8 +45,8 @@ function processarWebhookThaynan(payload) {
   // ──────────────────────────────────────────────
 
   // ROTA A — conferir_pecas
-  // Condições: peca existe E modelo existe E estagio_funil === 'conferir_pecas'
-  if (payload.peca && payload.modelo && payload.estagio_funil === 'conferir_pecas') {
+  // Condições: peca existe E marca_veiculo ou modelo_veiculo existem E estagio_funil === 'conferir_pecas'
+  if (payload.peca && (payload.marca_veiculo || payload.modelo_veiculo) && payload.estagio_funil === 'conferir_pecas') {
     Logger.log('[THAYNAN] → Rota A: conferir_pecas');
     return rotaConferirPecas(payload, recipient);
   }
@@ -128,7 +128,7 @@ function rotaConferirPecas(payload, recipient) {
       '',
       'Cliente/Telefone: ' + (nomeCliente || '') + ' | ' + recipient + ';',
       'Peça: ' + (payload.peca || '') + ';',
-      'Carro: ' + (payload.modelo || '') + ';',
+      'Carro: ' + [payload.marca_veiculo, payload.modelo_veiculo, payload.ano_veiculo, payload.motorizacao_veiculo].filter(Boolean).join(' ') + ';',
       '',
       '_' + (nomeCliente || 'Cliente') + ', o vendedor foi notificado, '
         + 'em alguns minutos você tera retorno._',
@@ -152,7 +152,7 @@ function rotaConferirPecas(payload, recipient) {
         '<b>Cliente:</b> ' + _esc(nomeCliente || 'N/I') + ';',
         '<b>Telefone:</b> ' + _esc(recipient || 'N/I') + ';',
         '<b>Peca:</b> ' + _esc(payload.peca || 'N/I') + ';',
-        '<b>Carro:</b> ' + _esc(payload.modelo || 'N/I') + ';',
+        '<b>Carro:</b> ' + _esc([payload.marca_veiculo, payload.modelo_veiculo, payload.ano_veiculo, payload.motorizacao_veiculo].filter(Boolean).join(' ') || 'N/I') + ';',
         '',
         '<i>' + _esc(payload.tarefa || '') + '</i>',
       ].join('\n');

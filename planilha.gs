@@ -38,6 +38,21 @@ function adicionarLinhaCRM(dados, recipient) {
     dados.atendente        || '', dados.status_tarefa    || '', '',
     dados.atendente        || '', dados.origem           || '',
   ]);
+
+  // Persiste campos de veículo em colunas dinâmicas (criadas automaticamente se não existirem)
+  var novaLinha = sheet.getLastRow();
+  var veicCampos = {
+    'marca_veiculo':       dados.marca_veiculo       || '',
+    'modelo_veiculo':      dados.modelo_veiculo      || '',
+    'ano_veiculo':         dados.ano_veiculo         || '',
+    'motorizacao_veiculo': dados.motorizacao_veiculo || '',
+  };
+  Object.keys(veicCampos).forEach(function(h) {
+    if (!veicCampos[h]) return; // não cria coluna se veio vazio
+    var col = _colByHeader(sheet, h);
+    sheet.getRange(novaLinha, col).setValue(veicCampos[h]);
+  });
+
   Logger.log('[CRM] Linha adicionada: protocolo=' + dados.protocolo);
   return true;
 }
@@ -110,7 +125,7 @@ function editarCampoCRM(protocolo, campos, authToken) {
   var CAMPOS_DINAMICOS = [
     'email','genero','nascimento','cargo',
     'empresa','cidade','estado','anotacoesCliente',
-    'veicFabricante','veicModelo','veicAno','veicMoto',
+    'marca_veiculo','modelo_veiculo','ano_veiculo','motorizacao_veiculo',
   ];
 
   var dados = sheet.getDataRange().getValues();

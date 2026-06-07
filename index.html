@@ -4351,17 +4351,10 @@ function openModal(proto) {
     '</div>';
   }
 
-  // ── 1. Ficha do Cliente ────────────────────────────────────
-  var fichaHtml =
-    '<div class="mi-client-block2">' +
-      '<div class="mi-client-av2">' + initials + '</div>' +
-      '<div style="min-width:0">' +
-        '<div style="font-size:.84rem;font-weight:600;color:var(--txt)">' + esc(nomeRaw) + '</div>' +
-        (waNum.length >= 8
-          ? '<a class="mi-wa-badge" href="https://wa.me/' + waNum + '" target="_blank" rel="noopener">' + svgIcon('whatsapp') + waFmt + '</a>'
-          : '<span style="font-size:.68rem;color:var(--txt3)">WhatsApp não cadastrado</span>') +
-      '</div>' +
-    '</div>' +
+  // ── 1. Ficha do Cliente ─────────────────────────────────────
+  // Estrutura customizada: mini-header sempre visível no botão (avatar + nome + WA)
+  // Campos expandíveis colapsados por padrão
+  var fichaCamposHtml =
     '<div class="mi-sec-body" style="border-top:1px solid var(--bd)">' +
       '<div class="mi"><div class="mi-lbl">E-mail</div>' + mkInput('email','email',card.email) + '</div>' +
       '<div class="mi"><div class="mi-lbl">Gênero</div>' + mkSelect('genero',['','Masculino','Feminino','Outro','Prefiro não dizer'],card.genero) + '</div>' +
@@ -4373,14 +4366,30 @@ function openModal(proto) {
       '<div class="mi full"><div class="mi-lbl">Anotações do cliente</div>' +
         '<textarea class="mi-input" data-field="anotacoesCliente" rows="2" style="font-size:.73rem">' + esc(card.anotacoesCliente||'') + '</textarea></div>' +
     '</div>';
+  // Seção customizada: botão = mini-header (colapsado por padrão)
+  var fichaSecHtml =
+    '<div class="mi-sec">' +
+      '<button class="mi-sec-hd" id="msh-cliente" data-sec="cliente" onclick="_miToggleSec(this)" style="min-height:52px;padding:7px 11px">' +
+        '<div class="mi-client-av2" style="width:36px;height:36px;font-size:.85rem;flex-shrink:0">' + initials + '</div>' +
+        '<div style="min-width:0;flex:1;text-align:left;line-height:1.35">' +
+          '<div style="font-size:.83rem;font-weight:700;color:var(--txt)">' + esc(nomeRaw) + '</div>' +
+          '<div style="font-size:.67rem;color:var(--txt3);font-weight:400;display:flex;align-items:center;gap:4px">' +
+            svgIcon('whatsapp') +
+            (waNum.length >= 8 ? waFmt : 'WhatsApp não cadastrado') +
+          '</div>' +
+        '</div>' +
+        '<span class="mi-sec-chev">' + svgIcon('chevron-d') + '</span>' +
+      '</button>' +
+      '<div id="msb-cliente" style="display:none">' + fichaCamposHtml + '</div>' +
+    '</div>';
 
   // ── 2. Veículo ──────────────────────────────────────────────
   var veicHtml =
     '<div class="mi-sec-body">' +
-      '<div class="mi"><div class="mi-lbl">Fabricante / Marca</div>' + mkInput('veicFabricante','text',card.veicFabricante) + '</div>' +
-      '<div class="mi"><div class="mi-lbl">Modelo</div>' + mkInput('veicModelo','text',card.veicModelo) + '</div>' +
-      '<div class="mi"><div class="mi-lbl">Ano</div>' + mkInput('veicAno','text',card.veicAno) + '</div>' +
-      '<div class="mi"><div class="mi-lbl">Motorização</div>' + mkInput('veicMoto','text',card.veicMoto) + '</div>' +
+      '<div class="mi"><div class="mi-lbl">Fabricante / Marca</div>' + mkInput('marca_veiculo','text',card.marca_veiculo) + '</div>' +
+      '<div class="mi"><div class="mi-lbl">Modelo</div>' + mkInput('modelo_veiculo','text',card.modelo_veiculo) + '</div>' +
+      '<div class="mi"><div class="mi-lbl">Ano</div>' + mkInput('ano_veiculo','text',card.ano_veiculo) + '</div>' +
+      '<div class="mi"><div class="mi-lbl">Motorização</div>' + mkInput('motorizacao_veiculo','text',card.motorizacao_veiculo) + '</div>' +
     '</div>';
 
   // ── 3. Negociação ───────────────────────────────────────────
@@ -4403,9 +4412,9 @@ function openModal(proto) {
     '</div>';
 
   document.getElementById('m-info').innerHTML =
-    mkSec('cliente', 'user', 'Ficha do Cliente', true, fichaHtml) +
-    mkSec('veiculo', 'car',  'Veículo',          true, veicHtml)  +
-    mkSec('negoc',   'star', 'Negociação',        true, negocHtml);
+    fichaSecHtml +
+    mkSec('veiculo', 'car',  'Veículo',    true, veicHtml)  +
+    mkSec('negoc',   'star', 'Negociação', true, negocHtml);
 
   // ── Ações ─────────────────────────────────────────────────
   document.getElementById('m-acts').innerHTML =

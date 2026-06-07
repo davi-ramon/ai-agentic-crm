@@ -1,0 +1,26 @@
+[
+    {
+        "chat_id": "cdbeb248-a4e5-4ee5-8aa4-af3d1bee28e0-test",
+        "contact_name": "Deyvid Ramon",
+        "contact_phone": "556392998814",
+        "peca": "Amortecedor dianteiro",
+        "marca_veiculo": "Toyota",
+        "modelo_veiculo": "Hilux",
+        "ano_veiculo": "2021",
+        "motorizacao_veiculo": "2.4",
+        "valor_peca": "1200",
+        "categoria_peca": "suspensão",
+        "atendente": "Thaynan IA",
+        "obs": "Obs_exemplo",
+        "prioridade": "Alta",
+        "oportunidade_nome": "Orçamento Suspensão Dianteira - Hilux 2021",
+        "tarefa": "verificar estoque e preço",
+        "data_tarefa": "08/06/2026 às 12:00",
+        "status_tarefa": "to_do",
+        "protocolo": "20260605171919",
+        "origem": "orgânico",
+        "estagio_funil": "conferir_pecas",
+        "contextId": "",
+        "nome_cliente": "Deyvid Ramon"
+    }
+]

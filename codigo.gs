@@ -141,8 +141,8 @@ function _detectarTipo(tipoParam, payload, params) {
   var estagioFunil = normalizarTipoEvento_(payload.estagio_funil || params.estagio_funil || '');
   if (estagioFunil === 'conferir_pecas') return 'conferir_pecas';
 
-  // 3. Campo peca + modelo — também indica conferir_pecas (fallback estrutural)
-  if (payload.peca && payload.modelo) return 'conferir_pecas';
+  // 3. Campo peca + marca_veiculo ou modelo_veiculo — indica conferir_pecas (fallback estrutural)
+  if (payload.peca && (payload.marca_veiculo || payload.modelo_veiculo)) return 'conferir_pecas';
 
   // 4. Detecção estrutural — campos únicos por tipo de evento nativo
   //    (ordem importa: do mais específico para o mais genérico)
@@ -311,7 +311,8 @@ function _mesclarObjetos_(prioritario, complementar) {
 function _testarConferirPecas() {
   var r = _rotear('conferir_pecas', {
     estagio_funil:'conferir_pecas', peca:'Amortecedor dianteiro',
-    modelo:'Toyota Hilux 2022', valor_peca:'850', atendente:'Thaynan',
+    marca_veiculo:'Toyota', modelo_veiculo:'Hilux', ano_veiculo:'2022', motorizacao_veiculo:'2.8 diesel',
+    valor_peca:'850', atendente:'Thaynan',
     chat_id:'3F102654AAC2505647613ED3AED0536B-556381008682',
     prioridade:'Alta', protocolo:'20260409090000',
     oportunidade_nome:'Amortecedor Hilux 2022', obs:'Urgência',
