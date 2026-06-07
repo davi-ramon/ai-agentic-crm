@@ -171,7 +171,7 @@ WhatsApp Customer
 
 ### 1. Clone & Configure
 ```bash
-git clone https://github.com/YOUR_USERNAME/ai-agentic-crm.git
+git clone https://github.com/davi-ramon/ai-agentic-crm.git
 cd ai-agentic-crm
 
 # Copy and fill in your credentials
@@ -246,6 +246,6 @@ See [LICENSE](LICENSE) for details.
 <div align="center">
 
 Built with ☕ and `console.log()` debugging by **Wagner Tavares**  
-[LinkedIn](https://linkedin.com/in/YOUR_LINKEDIN) · [GitHub](https://github.com/YOUR_USERNAME)
+[LinkedIn](https://www.linkedin.com/in/deyvid-ramon-labads/) · [GitHub](https://github.com/davi-ramon)
 
 </div>
