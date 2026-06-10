@@ -185,6 +185,20 @@ function _getCrmDataInterno() {
         idOport:     _col(r,'ID da Oportunidade'),  // coluna real: "ID da Oportunidade"
         transfPara:  _col(r,'Transferido para'),
         origem:      _col(r,'Origem'),
+        // ── Veículo (colunas dinâmicas) ─────────────────────────
+        marca_veiculo:       _col(r,'marca_veiculo'),
+        modelo_veiculo:      _col(r,'modelo_veiculo'),
+        ano_veiculo:         _col(r,'ano_veiculo'),
+        motorizacao_veiculo: _col(r,'motorizacao_veiculo'),
+        // ── Ficha do Cliente (colunas dinâmicas) ─────────────────
+        email:            _col(r,'email'),
+        genero:           _col(r,'genero'),
+        nascimento:       _col(r,'nascimento'),
+        cargo:            _col(r,'cargo'),
+        empresa:          _col(r,'empresa'),
+        cidade:           _col(r,'cidade'),
+        estado:           _col(r,'estado'),
+        anotacoesCliente: _col(r,'anotacoesCliente'),
       };
     });
   } catch (e) {
