@@ -587,6 +587,30 @@ function salvarConfigsChatLateral(dados, authToken) {
   return { ok: true };
 }
 
+function getConfigsMensagemTriagem(authToken) {
+  requireAuth(authToken, 'admin');
+  var c = getConfigs();
+  return {
+    ativa:               String(c['msg_triagem_ativa']        || 'true').toLowerCase().trim() !== 'false',
+    mensagem:            String(c['msg_triagem_texto']        || '').trim(),
+    mensagemForaHorario: String(c['msg_triagem_fora_horario'] || '').trim(),
+    usarHorario:         String(c['msg_triagem_horario']      || 'false').toLowerCase().trim() !== 'false',
+  };
+}
+
+function salvarConfigsMensagemTriagem(dados, authToken) {
+  var sessao = requireAuth(authToken, 'admin');
+  salvarConfig('msg_triagem_ativa',        dados.ativa        ? 'true' : 'false');
+  salvarConfig('msg_triagem_texto',        String(dados.mensagem            || '').trim());
+  salvarConfig('msg_triagem_fora_horario', String(dados.mensagemForaHorario || '').trim());
+  salvarConfig('msg_triagem_horario',      dados.usarHorario  ? 'true' : 'false');
+  registrarLog('auditoria', 'ok', { msg_triagem: dados }, '', {
+    usuario: sessao.email,
+    acao: 'alterar_msg_triagem',
+  });
+  return { ok: true };
+}
+
 function getRecentPushEvents(sinceIso, authToken) {
   requireAuth(authToken, 'operador');
   var sheet = getSpreadsheet().getSheetByName('Logs');

@@ -1841,6 +1841,44 @@ body.auth-locked #auth-screen{display:flex;}
       <p style="font-size:.7rem;color:var(--txt3);margin-top:10px;">O painel lateral nativo do navegador não pode ser controlado por um WebApp comum. O sistema abre uma janela lateral ancorada, sem iframe, como alternativa compatível com Edge/Chrome/PWA.</p>
     </div>
 
+    <!-- ══ AUTOMAÇÃO: MENSAGEM PÓS-TRIAGEM ══ -->
+    <div class="cfg-section">
+      <div class="cfg-section-title"><span class="cfg-title-icon" data-icon="message"></span> Automações — Mensagem pós-triagem</div>
+      <p style="font-size:.72rem;color:var(--txt3);line-height:1.6;margin:0 0 14px">
+        Mensagem enviada ao cliente automaticamente após a IA registrar uma cotação no CRM.<br>
+        Variáveis disponíveis:
+        <code>{{contact_name}}</code> <code>{{peca}}</code> <code>{{marca_veiculo}}</code>
+        <code>{{modelo_veiculo}}</code> <code>{{ano_veiculo}}</code> <code>{{motorizacao_veiculo}}</code>
+        <code>{{protocolo}}</code> <code>{{contact_phone}}</code>
+      </p>
+      <label class="cfg-checkline" style="margin-bottom:16px;">
+        <input type="checkbox" id="cfg-mt-ativa" checked>
+        Ativar envio automático da mensagem pós-triagem
+      </label>
+      <div id="cfg-mt-campos">
+        <div style="margin-bottom:14px;">
+          <span class="cfg-telegram-lbl" style="display:block;margin-bottom:6px;font-size:.78rem;font-weight:600;color:var(--txt2);">Mensagem (horário comercial)</span>
+          <textarea id="cfg-mt-texto" class="cfg-input" rows="3"
+            style="width:100%;resize:vertical;font-size:.78rem;line-height:1.5;font-family:var(--f)"
+            placeholder="{{contact_name}}, o vendedor foi notificado e em breve retornará com o seu orçamento."></textarea>
+        </div>
+        <label class="cfg-checkline" style="margin-bottom:10px;">
+          <input type="checkbox" id="cfg-mt-horario" onchange="_cfgMtHorarioToggle()">
+          Usar mensagem diferente fora do horário comercial (8h–17h30, seg–sex)
+        </label>
+        <div id="cfg-mt-fora-wrap" style="display:none;margin-bottom:14px;">
+          <span class="cfg-telegram-lbl" style="display:block;margin-bottom:6px;font-size:.78rem;font-weight:600;color:var(--txt2);">Mensagem fora do horário comercial</span>
+          <textarea id="cfg-mt-fora" class="cfg-input" rows="3"
+            style="width:100%;resize:vertical;font-size:.78rem;line-height:1.5;font-family:var(--f)"
+            placeholder="{{contact_name}}, amanhã pela manhã o vendedor retornará com o seu orçamento detalhado."></textarea>
+        </div>
+      </div>
+      <div style="margin-top:16px;display:flex;align-items:center;gap:10px;">
+        <button class="cfg-save" id="cfg-mt-save-btn" onclick="salvarMensagemTriagem()" style="margin-top:0"><span data-icon="save"></span>Salvar</button>
+        <span class="cfg-status" id="cfg-mt-status"></span>
+      </div>
+    </div>
+
     <div class="cfg-section" id="cfg-users-section">
       <div class="cfg-section-title"><span class="cfg-title-icon" data-icon="users"></span> Usuários e Convites</div>
       <div class="cfg-grid-2" style="margin-bottom:14px;">
@@ -6051,6 +6089,21 @@ function carregarConfigs() {
     .withFailureHandler(function(){})
     .getConfigsChatLateral(S.authToken);
 
+  // Carrega mensagem pós-triagem
+  google.script.run
+    .withSuccessHandler(function(mt) {
+      var ativaEl   = document.getElementById('cfg-mt-ativa');
+      var textoEl   = document.getElementById('cfg-mt-texto');
+      var foraEl    = document.getElementById('cfg-mt-fora');
+      var horarioEl = document.getElementById('cfg-mt-horario');
+      if (ativaEl)   ativaEl.checked   = mt.ativa !== false;
+      if (textoEl)   textoEl.value     = mt.mensagem            || '';
+      if (foraEl)    foraEl.value      = mt.mensagemForaHorario || '';
+      if (horarioEl) { horarioEl.checked = !!mt.usarHorario; _cfgMtHorarioToggle(); }
+    })
+    .withFailureHandler(function(){})
+    .getConfigsMensagemTriagem(S.authToken);
+
   google.script.run
     .withSuccessHandler(renderUsersList)
     .withFailureHandler(function(){})
@@ -6271,6 +6324,40 @@ function salvarIntegracaoUI() {
       if (status) { status.style.color = 'var(--red)'; status.textContent = '❌ Erro: ' + (e.message || e); }
     })
     .salvarIntegracaoConfig(_getGMDados_(), S.authToken);
+}
+
+/* ════════════════════════════════════════════════════
+   MENSAGEM PÓS-TRIAGEM — CONFIG UI
+   ════════════════════════════════════════════════════ */
+function _cfgMtHorarioToggle() {
+  var checked = document.getElementById('cfg-mt-horario');
+  var wrap    = document.getElementById('cfg-mt-fora-wrap');
+  if (wrap) wrap.style.display = (checked && checked.checked) ? '' : 'none';
+}
+
+function salvarMensagemTriagem() {
+  var btn    = document.getElementById('cfg-mt-save-btn');
+  var status = document.getElementById('cfg-mt-status');
+  if (btn) { btn.disabled = true; btn.innerHTML = svgIcon('save') + 'Salvando...'; }
+
+  var dados = {
+    ativa:               !!(document.getElementById('cfg-mt-ativa')   || {}).checked,
+    mensagem:            ((document.getElementById('cfg-mt-texto')    || {}).value || '').trim(),
+    mensagemForaHorario: ((document.getElementById('cfg-mt-fora')     || {}).value || '').trim(),
+    usarHorario:         !!(document.getElementById('cfg-mt-horario') || {}).checked,
+  };
+
+  google.script.run
+    .withSuccessHandler(function() {
+      if (btn)    { btn.disabled = false; btn.innerHTML = svgIcon('save') + 'Salvar'; }
+      if (status) { status.style.color = 'var(--green)'; status.style.display = 'inline'; status.textContent = 'Salvo!'; setTimeout(function(){ status.style.display = 'none'; }, 3000); }
+      toast('Mensagem pós-triagem salva!', 'ok');
+    })
+    .withFailureHandler(function(e) {
+      if (btn)    { btn.disabled = false; btn.innerHTML = svgIcon('save') + 'Salvar'; }
+      if (status) { status.style.color = 'var(--red)'; status.style.display = 'inline'; status.textContent = 'Erro: ' + (e.message || e); }
+    })
+    .salvarConfigsMensagemTriagem(dados, S.authToken);
 }
 
 /* Salva apenas as credenciais Telegram (botão dedicado na seção Telegram) */

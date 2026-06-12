@@ -120,22 +120,37 @@ function rotaConferirPecas(payload, recipient) {
     Logger.log('[ROTA A] ✗ Erro start-human: ' + e.message);
   }
 
-  // 3. Envia resumo da cotação para o cliente via GPT Maker (ID 3 no blueprint)
-  //    Mensagem original: "RESUMO DA COTAÇÃO! ..."
+  // 3. Envia resumo + mensagem pós-triagem para o cliente via GPT Maker
   try {
-    const mensagemCliente = [
+    var msgCfg = _lerConfigMensagemTriagem_();
+    var linhas = [
       '*RESUMO DA COTACAO*',
       '',
       'Cliente/Telefone: ' + (nomeCliente || '') + ' | ' + recipient + ';',
       'Peça: ' + (payload.peca || '') + ';',
       'Carro: ' + [payload.marca_veiculo, payload.modelo_veiculo, payload.ano_veiculo, payload.motorizacao_veiculo].filter(Boolean).join(' ') + ';',
-      '',
-      '_' + (nomeCliente || 'Cliente') + ', o vendedor foi notificado, '
-        + 'em alguns minutos você tera retorno._',
-    ].join('\n');
+    ];
 
-    gptMakerEnviarMensagem(chatId, mensagemCliente);
-    Logger.log('[ROTA A] ✓ Mensagem de resumo enviada ao cliente');
+    if (msgCfg.ativa) {
+      var vars = {
+        contact_name:        nomeCliente || 'Cliente',
+        contact_phone:       recipient   || '',
+        peca:                payload.peca                || '',
+        marca_veiculo:       payload.marca_veiculo       || '',
+        modelo_veiculo:      payload.modelo_veiculo      || '',
+        ano_veiculo:         payload.ano_veiculo         || '',
+        motorizacao_veiculo: payload.motorizacao_veiculo || '',
+        protocolo:           payload.protocolo           || '',
+      };
+      var template = (msgCfg.usarHorario && !msgCfg.dentroHorario)
+        ? msgCfg.mensagemForaHorario
+        : msgCfg.mensagem;
+      var msgPos = _interpolarMensagemTriagem_(template, vars);
+      if (msgPos) linhas.push('', '_' + msgPos + '_');
+    }
+
+    gptMakerEnviarMensagem(chatId, linhas.join('\n'));
+    Logger.log('[ROTA A] ✓ Mensagem de resumo enviada ao cliente (pós-triagem: ' + (msgCfg.ativa ? 'ativa' : 'desativada') + ')');
   } catch (e) {
     erros.push('GPT Maker mensagem cliente: ' + e.message);
     Logger.log('[ROTA A] ✗ Erro mensagem cliente: ' + e.message);
@@ -573,4 +588,44 @@ function _esc(str) {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
+}
+
+// ──────────────────────────────────────────────────────────────
+//  MENSAGEM PÓS-TRIAGEM — configurável via Configurações do CRM
+// ──────────────────────────────────────────────────────────────
+
+function _lerConfigMensagemTriagem_() {
+  try {
+    var c      = getConfigs();
+    var ativa  = String(c['msg_triagem_ativa']  || 'true').toLowerCase().trim();
+    var horario = String(c['msg_triagem_horario'] || 'false').toLowerCase().trim();
+    var agora  = new Date();
+    var hStr   = Utilities.formatDate(agora, 'America/Sao_Paulo', 'HH:mm');
+    var dStr   = Utilities.formatDate(agora, 'America/Sao_Paulo', 'u'); // ISO: 1=seg, 7=dom
+    var h      = parseInt(hStr.split(':')[0]) + parseInt(hStr.split(':')[1]) / 60;
+    var d      = parseInt(dStr);
+    return {
+      ativa:               ativa !== 'false',
+      mensagem:            String(c['msg_triagem_texto']        || '{{contact_name}}, o vendedor foi notificado e em breve retornará com o seu orçamento.').trim(),
+      mensagemForaHorario: String(c['msg_triagem_fora_horario'] || '{{contact_name}}, amanhã pela manhã o vendedor retornará com o seu orçamento detalhado.').trim(),
+      usarHorario:         horario !== 'false',
+      dentroHorario:       (d >= 1 && d <= 5 && h >= 8 && h < 17.5),
+    };
+  } catch (e) {
+    Logger.log('[_lerConfigMensagemTriagem_] Erro: ' + e.message + ' — usando fallback');
+    return {
+      ativa: true,
+      mensagem: '{{contact_name}}, o vendedor foi notificado e em breve retornará com o seu orçamento.',
+      mensagemForaHorario: '{{contact_name}}, amanhã pela manhã o vendedor retornará com o seu orçamento detalhado.',
+      usarHorario: false,
+      dentroHorario: true,
+    };
+  }
+}
+
+function _interpolarMensagemTriagem_(template, vars) {
+  return String(template || '').replace(/\{\{(\w+)\}\}/g, function(_, key) {
+    var val = vars[key];
+    return (val !== undefined && String(val).trim() !== '') ? String(val) : '';
+  });
 }
