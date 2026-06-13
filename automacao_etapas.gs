@@ -209,13 +209,27 @@ function _executarMensagemAuto(card, cfg, stageId) {
     var texto = _substituirPlaceholders(cfg.texto, card);
 
     if (cfg.usar_ia) {
+      // IA gera e ENVIA via POST /agent/{id}/conversation — a resposta já sai
+      // como o agente no chat correto; não precisa (nem deve) de start-human.
       gptMakerGerarResposta(chatId, texto);
+      Logger.log('[AUTO-ETAPA] ✓ Mensagem IA gerada/enviada [' + chatId + ']: ' + texto.substring(0, 80));
     } else {
+      // Envio direto via POST /chat/{chatId}/send-message.
+      // ⚠️ É OBRIGATÓRIO assumir o atendimento (start-human) ANTES de enviar.
+      // Sem isso, o GPT Maker trata a mensagem como inbound (cliente→agente)
+      // e/ou roteia para um chat novo. Mesmo padrão da rotaConferirPecas que funciona.
+      try {
+        gptMakerStartHuman(chatId);
+        Logger.log('[AUTO-ETAPA] ✓ start-human OK antes do envio [' + chatId + ']');
+      } catch(eSh) {
+        Logger.log('[AUTO-ETAPA] ⚠ start-human falhou (seguindo com envio): ' + eSh.message);
+      }
       gptMakerEnviarMensagem(chatId, texto);
+      Logger.log('[AUTO-ETAPA] ✓ Mensagem enviada como agente [' + chatId + ']: ' + texto.substring(0, 80));
     }
-    Logger.log('[AUTO-ETAPA] ✓ Mensagem enviada [' + chatId + ']: ' + texto.substring(0, 80));
 
     // ── Reatribuição para a IA ─────────────────────────────────────
+    // stop-human devolve o controle ao bot/IA (reatribui) — NÃO finaliza o atendimento.
     if (cfg.reatribuir_ia === true) {
       Logger.log('[AUTO-ETAPA] reatribuir_ia=true → solicitando stop-human para chatId=' + chatId);
       try {
