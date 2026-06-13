@@ -460,3 +460,19 @@ function removerTriggerFollowUp() {
   });
   return { ok: true, mensagem: removidos + ' trigger(s) removido(s).' };
 }
+
+/** Instala o trigger de follow-up a partir do frontend (requer admin). */
+function ativarTriggerFollowUpAdmin(authToken) {
+  requireAuth(authToken, 'admin');
+  return criarTriggerFollowUp();
+}
+
+/** Retorna status do trigger de follow-up (ativo/inativo). */
+function getStatusTriggerFollowUp(authToken) {
+  requireAuth(authToken, 'admin');
+  var ativo = false;
+  ScriptApp.getProjectTriggers().forEach(function(t) {
+    if (t.getHandlerFunction() === 'triggerFollowUp') ativo = true;
+  });
+  return { ativo: ativo };
+}

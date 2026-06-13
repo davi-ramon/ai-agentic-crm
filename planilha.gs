@@ -50,7 +50,9 @@ function adicionarLinhaCRM(dados, recipient) {
   Object.keys(veicCampos).forEach(function(h) {
     if (!veicCampos[h]) return; // não cria coluna se veio vazio
     var col = _colByHeader(sheet, h);
-    sheet.getRange(novaLinha, col).setValue(veicCampos[h]);
+    var rng = sheet.getRange(novaLinha, col);
+    rng.setNumberFormat('@');           // força texto — impede Sheets de interpretar como data/número
+    rng.setValue(String(veicCampos[h]));
   });
 
   Logger.log('[CRM] Linha adicionada: protocolo=' + dados.protocolo);

@@ -186,10 +186,11 @@ function _getCrmDataInterno() {
         transfPara:  _col(r,'Transferido para'),
         origem:      _col(r,'Origem'),
         // ── Veículo (colunas dinâmicas) ─────────────────────────
-        marca_veiculo:       _col(r,'marca_veiculo'),
-        modelo_veiculo:      _col(r,'modelo_veiculo'),
-        ano_veiculo:         _col(r,'ano_veiculo'),
-        motorizacao_veiculo: _col(r,'motorizacao_veiculo'),
+        // _colStr: como _col mas ignora Date objects (Sheets auto-formata datas)
+        marca_veiculo:       _colStr(r,'marca_veiculo'),
+        modelo_veiculo:      _colStr(r,'modelo_veiculo'),
+        ano_veiculo:         _colStr(r,'ano_veiculo'),
+        motorizacao_veiculo: _colStr(r,'motorizacao_veiculo'),
         // ── Ficha do Cliente (colunas dinâmicas) ─────────────────
         email:            _col(r,'email'),
         genero:           _col(r,'genero'),
@@ -357,6 +358,29 @@ function _col(row, colName) {
     }
   }
   return '';
+}
+
+/**
+ * Como _col, mas retorna '' se o valor for um Date object.
+ * Usado para colunas dinâmicas de veículo, onde o Sheets pode
+ * auto-converter a célula para Date quando o formato não é texto.
+ */
+function _colStr(row, colName) {
+  if (!row) return '';
+  var val = row[colName];
+  if (val === undefined || val === null || val === '') {
+    // Tenta fuzzy match (mesmo que _col)
+    var norm = colName.toLowerCase().replace(/[^a-z0-9]/g,'');
+    var keys = Object.keys(row);
+    for (var i = 0; i < keys.length; i++) {
+      if (keys[i].toLowerCase().replace(/[^a-z0-9]/g,'') === norm) {
+        val = row[keys[i]]; break;
+      }
+    }
+  }
+  if (val === undefined || val === null || val === '') return '';
+  if (val instanceof Date) return ''; // Sheets interpretou como data — dado corrompido
+  return String(val).trim();
 }
 
 /**

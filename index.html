@@ -1681,11 +1681,12 @@ body.auth-locked #auth-screen{display:flex;}
         Incluir contexto da conversa na análise (modo estático — lê histórico do GPT Maker)
       </label>
       <p style="font-size:.7rem;color:var(--txt3);margin-top:10px;">
-        ⚙️ Configure o trigger periódico: <code>criarTriggerFollowUp()</code> no Apps Script Editor (executa a cada hora).
+        ⚙️ O trigger periódico executa a cada hora automaticamente. Clique em "Ativar Trigger" abaixo para instalá-lo (necessário apenas 1x).
       </p>
       <div style="margin-top:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
         <button class="cfg-save" onclick="salvarConfigFollowUp()"><span data-icon="save"></span>Salvar Follow-up</button>
         <button class="cfg-save" onclick="executarFollowUpAgora()" style="background:var(--royal)">▶️ Executar Agora</button>
+        <button class="cfg-save" id="fu-trigger-btn" onclick="ativarTriggerFollowUp()" style="background:var(--sf2);color:var(--txt2);border:1px solid var(--bd)" title="Instala o trigger periódico que executa o follow-up automaticamente a cada hora">⏰ Ativar Trigger</button>
         <button class="cfg-save" onclick="verTrackingFollowUp()" style="background:var(--sf2);color:var(--royal);border:1px solid var(--bd)">📋 Ver Tracking</button>
         <span class="cfg-status" id="fu-save-status"></span>
       </div>
@@ -6879,6 +6880,21 @@ function executarFollowUpAgora() {
       if (box) { box.style.display = 'block'; box.style.borderColor = 'var(--red)'; box.innerHTML = '❌ Erro: ' + (e.message||e); }
     })
     .executarFollowUpManual(S.authToken);
+}
+
+function ativarTriggerFollowUp() {
+  var btn = document.getElementById('fu-trigger-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Instalando...'; }
+  google.script.run
+    .withSuccessHandler(function(r) {
+      if (btn) { btn.disabled = false; btn.textContent = r.ok ? '✅ Trigger ativo' : '❌ Erro'; }
+      toast(r.ok ? 'Trigger de follow-up instalado! Executará a cada hora.' : 'Erro ao instalar trigger.', r.ok ? 'ok' : 'erro');
+    })
+    .withFailureHandler(function(e) {
+      if (btn) { btn.disabled = false; btn.textContent = '⏰ Ativar Trigger'; }
+      toast('Erro: ' + (e.message||e), 'erro');
+    })
+    .ativarTriggerFollowUpAdmin(S.authToken);
 }
 
 /* Exibe/oculta a área de tracking e carrega os dados */

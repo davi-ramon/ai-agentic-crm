@@ -77,6 +77,16 @@ function processarWebhookThaynan(payload) {
  * @param {string} recipient - Número de WhatsApp extraído do chat_id
  */
 function rotaConferirPecas(payload, recipient) {
+  // ── Idempotência ────────────────────────────────────────────
+  // Rejeita se o mesmo protocolo já existe no CRM (webhook duplicado do GPT Maker).
+  var protocolo = String(payload.protocolo || '').trim();
+  if (protocolo && _protocoloJaExiste_(protocolo)) {
+    Logger.log('[ROTA A] ⚠️  DUPLICATA ignorada — protocolo já existe: ' + protocolo);
+    registrarLog('conferir_pecas', 'duplicate_ignored', payload, 'Protocolo duplicado: ' + protocolo);
+    return { status: 'duplicate_ignored', protocolo: protocolo };
+  }
+  // ───────────────────────────────────────────────────────────
+
   // ── Verificação de Autopreservação ─────────────────────────
   // Se o pipeline está sobrecarregado, a IA recusa novos leads e avisa o operador.
   try {
@@ -588,6 +598,29 @@ function _esc(str) {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
+}
+
+// ──────────────────────────────────────────────────────────────
+//  IDEMPOTÊNCIA
+// ──────────────────────────────────────────────────────────────
+
+/**
+ * Verifica se o protocolo já existe na coluna F (índice 5) da aba CRM.
+ * Fail-open: em caso de erro retorna false (não bloqueia).
+ */
+function _protocoloJaExiste_(protocolo) {
+  try {
+    var sheet = getSpreadsheet().getSheetByName(CONFIG.SHEET_CRM);
+    if (!sheet) return false;
+    var dados = sheet.getDataRange().getValues();
+    for (var i = 1; i < dados.length; i++) {
+      if (String(dados[i][5]).trim() === protocolo) return true;
+    }
+    return false;
+  } catch (e) {
+    Logger.log('[_protocoloJaExiste_] Erro (ignorado): ' + e.message);
+    return false;
+  }
 }
 
 // ──────────────────────────────────────────────────────────────
