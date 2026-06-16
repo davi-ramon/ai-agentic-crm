@@ -103,7 +103,19 @@ function salvarStageAutomation(stageId, config, authToken) {
  */
 function executarAutomacaoEtapa(stageId, protocolo, authToken) {
   requireAuth(authToken, 'operador');
-  Logger.log('[AUTO-ETAPA] ▶ executarAutomacaoEtapa stageId="'+stageId+'" protocolo="'+protocolo+'"');
+  return _executarAutomacaoEtapaInterno(stageId, protocolo, 'frontend');
+}
+
+/**
+ * Versão interna SEM validação de authToken — para uso por handlers de backend
+ * (ex.: criação de card pela IA via webhook). Mesmo pipeline de executarAutomacaoEtapa.
+ *
+ * @param {string} stageId    etapa de destino
+ * @param {string} protocolo  protocolo do card
+ * @param {string} [origem]   rótulo de origem para log (ex.: 'criacao_ia', 'frontend')
+ */
+function _executarAutomacaoEtapaInterno(stageId, protocolo, origem) {
+  Logger.log('[AUTO-ETAPA] ▶ executarAutomacaoEtapa stageId="'+stageId+'" protocolo="'+protocolo+'" origem="'+(origem||'?')+'"');
 
   if (!stageId || !protocolo) {
     Logger.log('[AUTO-ETAPA] ✗ Parâmetros inválidos.');

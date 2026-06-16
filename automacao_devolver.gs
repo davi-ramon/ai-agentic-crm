@@ -130,6 +130,22 @@ function rotaConferirPecas(payload, recipient) {
     Logger.log('[ROTA A] ✗ Erro start-human: ' + e.message);
   }
 
+  // 2.5 Dispara as automações da etapa inicial (mesmo pipeline do move de card).
+  //     Sem isso, cards criados pela IA NÃO disparam follow-ups/webhooks/fluxos —
+  //     só o movimento manual entre etapas disparava. Executa imediatos + enfileira
+  //     cadenciados. Roda ANTES do resumo para que um follow-up de confirmação
+  //     ("vou verificar aqui.") chegue antes das demais comunicações.
+  try {
+    SpreadsheetApp.flush(); // garante que a linha recém-adicionada seja visível na leitura
+    if (protocolo) {
+      var rAuto = _executarAutomacaoEtapaInterno('conferir_pecas', protocolo, 'criacao_ia');
+      Logger.log('[ROTA A] ✓ Automações da etapa inicial: ' + JSON.stringify(rAuto));
+    }
+  } catch (eAuto) {
+    Logger.log('[ROTA A] ⚠ Falha ao disparar automações da etapa (ignorado): ' + eAuto.message);
+    // Não bloqueia o fluxo — o resumo abaixo ainda será enviado
+  }
+
   // 3. Envia resumo + mensagem pós-triagem para o cliente via GPT Maker
   try {
     var msgCfg = _lerConfigMensagemTriagem_();
