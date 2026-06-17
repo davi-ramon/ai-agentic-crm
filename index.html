@@ -127,6 +127,19 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);min-height:100vh
 /* ── MAIN ───────────────────────────────────────────── */
 #main{margin-left:var(--sw);flex:1;height:100vh;overflow-y:auto;display:flex;flex-direction:column;transition:margin-left var(--t);}
 #main.sb-collapsed{margin-left:56px;}
+
+/* ── SIDEBAR HOVER-EXPAND (desktop, só quando recolhida) ──
+   A sidebar recolhida expande ao passar o mouse, sobrepondo o conteúdo
+   (não empurra #main, pois é position:fixed). Mouse-out volta a recolher. */
+@media (hover:hover) and (min-width:769px){
+  #sidebar.collapsed:hover{width:var(--sw);box-shadow:4px 0 28px rgba(0,0,0,.16);z-index:300;}
+  #sidebar.collapsed:hover .sb-logo-img{opacity:1;width:auto;}
+  #sidebar.collapsed:hover .nav-txt{opacity:1;width:auto;}
+  #sidebar.collapsed:hover .nav-lbl{opacity:1;}
+  #sidebar.collapsed:hover .sb-toggle-ico{transform:rotate(0deg);}
+  #sidebar.collapsed:hover .btn-dev-txt,
+  #sidebar.collapsed:hover .btn-theme-txt{display:inline;}
+}
 #topbar{
   background:var(--surface);border-bottom:1px solid var(--bd);
   padding:12px 22px;display:flex;align-items:center;justify-content:space-between;
@@ -447,14 +460,35 @@ body{font-family:var(--f);background:var(--bg);color:var(--txt);min-height:100vh
 #modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.46);backdrop-filter:blur(5px);z-index:500;display:none;align-items:center;justify-content:center;padding:12px;}
 #modal-ov.open{display:flex;animation:fbg .18s ease;}
 @keyframes fbg{from{opacity:0;}to{opacity:1;}}
-.modal{background:var(--surface);border:1px solid var(--bd);border-radius:16px;width:min(1080px,97vw);height:min(88vh,800px);box-shadow:0 24px 64px rgba(0,0,0,.22),0 0 0 1px rgba(0,0,0,.04);display:flex;flex-direction:column;overflow:hidden;animation:mIn .22s cubic-bezier(.34,1.25,.64,1);}
-@keyframes mIn{from{opacity:0;transform:scale(.93) translateY(10px);}to{opacity:1;transform:scale(1) translateY(0);}}
+.modal{background:var(--surface);border:1px solid var(--bd);border-radius:16px;width:min(1080px,97vw);height:min(88vh,800px);box-shadow:0 24px 64px rgba(0,0,0,.22),0 0 0 1px rgba(0,0,0,.04);display:flex;flex-direction:column;overflow:hidden;animation:mIn .62s cubic-bezier(.18,.89,.32,1.28) both;}
+/* Entrada: desliza de baixo p/ cima com leve overshoot (sensação de "ficha que sobe") */
+@keyframes mIn{from{opacity:0;transform:translateY(100vh) scale(.97);}to{opacity:1;transform:translateY(0) scale(1);}}
+/* Saída: movimento reverso — desce e some, como "guardar a ficha" */
+#modal-ov.closing{animation:fbgOut .34s ease forwards;}
+#modal-ov.closing .modal{animation:mOut .36s cubic-bezier(.4,0,.7,.2) forwards;}
+@keyframes mOut{from{opacity:1;transform:translateY(0) scale(1);}to{opacity:0;transform:translateY(100vh) scale(.97);}}
+@keyframes fbgOut{from{opacity:1;}to{opacity:0;}}
+@media (prefers-reduced-motion:reduce){.modal{animation-duration:.18s;}#modal-ov.closing .modal{animation-duration:.15s;}}
 
 /* Cabeçalho */
 .m-hd{padding:13px 18px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-shrink:0;background:var(--surface);}
 .m-title{font-size:.88rem;font-weight:700;line-height:1.3;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.m-close{width:28px;height:28px;border-radius:7px;border:1px solid var(--bd);background:none;color:var(--txt3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all var(--t);}
+.m-close{width:28px;height:28px;border-radius:7px;border:1px solid var(--bd);background:none;color:var(--txt3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all var(--t);flex-shrink:0;}
 .m-close:hover{border-color:var(--red);color:var(--red);background:var(--redd);}
+
+/* Ações no header do modal: Atribuir a mim + Transferir IA/Humano */
+.m-hd-actions{display:flex;align-items:center;gap:7px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;}
+.mhd-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;border:1.5px solid var(--royal);background:var(--rd);color:var(--royal);font-family:var(--f);font-size:.72rem;font-weight:700;cursor:pointer;transition:all var(--t);white-space:nowrap;}
+.mhd-btn:hover{background:var(--royal);color:#fff;}
+.mhd-btn:disabled{cursor:default;opacity:1;}
+/* Chip de responsável já atribuído (imutável via UI) */
+.mhd-owner{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;border:1px solid var(--bd);background:var(--sf2);color:var(--txt2);font-size:.72rem;font-weight:600;white-space:nowrap;}
+.mhd-owner b{color:var(--txt);font-weight:700;}
+/* Variante "Transferir para IA" — destaque amarelo quando humano está ativo */
+.mhd-btn.ia{border-color:#D97706;background:#FEF3C7;color:#B45309;}
+.mhd-btn.ia:hover{background:#D97706;color:#fff;}
+[data-theme="dark"] .mhd-btn.ia{background:rgba(217,119,6,.16);border-color:#D97706;color:#FBBF24;}
+.mhd-btn:disabled.loading{opacity:.6;}
 
 /* Corpo split */
 .m-split{display:flex;flex:1;min-height:0;overflow:hidden;}
@@ -1075,6 +1109,7 @@ body.auth-locked #auth-screen{display:flex;}
     <!-- Cabeçalho -->
     <div class="m-hd">
       <div class="m-title" id="m-title">Oportunidade</div>
+      <div class="m-hd-actions" id="m-hd-actions"></div>
       <button class="m-close" onclick="closeModal()"><span id="modal-close-ico"></span></button>
     </div>
 
@@ -2766,8 +2801,20 @@ function toggleSidebar(e) {
     S.sbOpen = !S.sbOpen;
     document.getElementById('sidebar').classList.toggle('collapsed', !S.sbOpen);
     document.getElementById('main').classList.toggle('sb-collapsed', !S.sbOpen);
+    try { localStorage.setItem('milvolts_sb_open', S.sbOpen ? '1' : '0'); } catch(_){}
   }
   LOG.info('toggleSidebar', 'sidebar ' + (S.sbOpen ? 'expandida' : 'recolhida'));
+}
+
+/* Estado inicial da sidebar no desktop: recolhida por padrão (hover expande).
+   Respeita a preferência salva pelo usuário, se existir. */
+function applySidebarInitial() {
+  if (_isMobile()) return; // mobile usa drawer (openSidebar/closeSidebar)
+  var pref = null;
+  try { pref = localStorage.getItem('milvolts_sb_open'); } catch(_){}
+  S.sbOpen = (pref === '1'); // sem preferência → recolhida
+  document.getElementById('sidebar').classList.toggle('collapsed', !S.sbOpen);
+  document.getElementById('main').classList.toggle('sb-collapsed', !S.sbOpen);
 }
 
 function openSidebar() {
@@ -4358,7 +4405,9 @@ function openModal(proto) {
   var card = S.crm.find(function(r){ return String(r.protocolo) === String(proto); });
   if (!card) { LOG.warn('openModal', 'Card não encontrado: ' + proto); toast('Card não encontrado.','erro'); return; }
   S.modalCard = card;
+  S._humanActive = false; // estado local do toggle IA/Humano (assume IA ativa ao abrir)
   document.getElementById('m-title').textContent = card.oportunidade || card.produto || 'Lead #' + proto;
+  _renderModalHeaderActions(card);
 
   // ── Helpers internos ──────────────────────────────────────
   function mkInput(field, type, val, small) {
@@ -4468,8 +4517,92 @@ function openModal(proto) {
   // Limpa badge de não lidas ao abrir
   _clearUnread(String(card['Contato'] || card.contato || '').trim());
 
-  document.getElementById('modal-ov').classList.add('open');
+  var _ov = document.getElementById('modal-ov');
+  _ov.classList.remove('closing'); // cancela animação de saída pendente, se houver
+  _ov.classList.add('open');
   setTimeout(function(){ var m=document.getElementById('mc-msgs'); if(m) m.scrollTop=m.scrollHeight; },120);
+}
+
+/* ════════════════════════════════════════════════════
+   HEADER DO MODAL — Atribuir a mim + Transferir IA/Humano
+   ════════════════════════════════════════════════════ */
+function _renderModalHeaderActions(card) {
+  var box = document.getElementById('m-hd-actions');
+  if (!box) return;
+  var html = '';
+
+  // 1) Responsável / Atribuir a mim
+  var resp = String(card.responsavel || '').trim();
+  if (resp && resp !== '—') {
+    // Já atribuído → chip imutável (alteração só via backend/admin)
+    html += '<span class="mhd-owner" title="Responsável por esta oportunidade">' + svgIcon('user') + '<b>' + esc(resp) + '</b></span>';
+  } else {
+    html += '<button class="mhd-btn" id="mhd-assign" onclick="atribuirAMim(this)" title="Assumir a responsabilidade por esta oportunidade">' + svgIcon('user') + 'Atribuir a mim</button>';
+  }
+
+  // 2) Transferir IA/Humano — só com chatId válido
+  var chatId = String(card['Contato'] || card.contato || '').trim();
+  if (chatId && chatId.length > 10) {
+    if (S._humanActive) {
+      html += '<button class="mhd-btn ia" id="mhd-transfer" onclick="toggleAtendimentoHumano(this)" title="Devolver o atendimento para a IA">' + svgIcon('assistant') + 'Transferir para IA</button>';
+    } else {
+      html += '<button class="mhd-btn" id="mhd-transfer" onclick="toggleAtendimentoHumano(this)" title="Pausar a IA e assumir o atendimento">' + svgIcon('user') + 'Transferir para humano</button>';
+    }
+  }
+  box.innerHTML = html;
+}
+
+function atribuirAMim(btn) {
+  if (!S.modalCard) return;
+  var nome = (S.user && (S.user.nome || S.user.email)) || '';
+  if (!nome) { toast('Usuário não identificado.', 'erro'); return; }
+  var proto = S.modalCard.protocolo;
+  if (btn) { btn.disabled = true; btn.classList.add('loading'); btn.innerHTML = svgIcon('user') + 'Atribuindo...'; }
+  google.script.run
+    .withSuccessHandler(function(r) {
+      if (r && r.ok) {
+        S.modalCard.responsavel = nome;
+        var inp = document.querySelector('#m-info [data-field="responsavel"]');
+        if (inp) inp.value = nome;
+        var c = S.crm.find(function(x){ return String(x.protocolo) === String(proto); });
+        if (c) c.responsavel = nome;
+        _renderModalHeaderActions(S.modalCard); // vira chip imutável
+        toast('Oportunidade atribuída a você.', 'ok');
+      } else {
+        if (btn) { btn.disabled = false; btn.classList.remove('loading'); btn.innerHTML = svgIcon('user') + 'Atribuir a mim'; }
+        toast((r && r.erro) || 'Erro ao atribuir.', 'erro');
+      }
+    })
+    .withFailureHandler(function(e) {
+      if (btn) { btn.disabled = false; btn.classList.remove('loading'); btn.innerHTML = svgIcon('user') + 'Atribuir a mim'; }
+      toast('Erro: ' + (e.message || e), 'erro');
+    })
+    .editarCampoCRM(proto, { responsavel: nome }, S.authToken);
+}
+
+function toggleAtendimentoHumano(btn) {
+  if (!S.modalCard) return;
+  var chatId = String(S.modalCard['Contato'] || S.modalCard.contato || '').trim();
+  if (!chatId) { toast('chatId não encontrado neste lead.', 'erro'); return; }
+  var toHuman = !S._humanActive; // IA ativa → assume humano; humano ativo → devolve à IA
+  if (btn) { btn.disabled = true; btn.classList.add('loading'); btn.innerHTML = svgIcon('refresh') + (toHuman ? 'Assumindo...' : 'Devolvendo...'); }
+
+  var done = function(ok, humanActive, erro) {
+    if (ok) {
+      S._humanActive = humanActive;
+      _renderModalHeaderActions(S.modalCard);
+      toast(humanActive ? 'Atendimento assumido — IA pausada neste chat.' : 'Atendimento devolvido à IA.', 'ok');
+    } else {
+      _renderModalHeaderActions(S.modalCard); // restaura o botão ao estado anterior
+      toast(erro || 'Erro na transferência.', 'erro');
+    }
+  };
+
+  var rpc = google.script.run
+    .withSuccessHandler(function(r) { done(r && r.ok, toHuman, r && r.erro); })
+    .withFailureHandler(function(e) { done(false, S._humanActive, e.message || String(e)); });
+  if (toHuman) rpc.assumirAtendimentoModal(chatId, S.authToken);
+  else         rpc.devolverAtendimentoModal(chatId, S.authToken);
 }
 
 /* ════════════════════════════════════════════════════
@@ -5413,16 +5546,21 @@ function acaoSalvarModal(btn) {
 
 function closeModal(e) {
   if (e && e.target !== document.getElementById('modal-ov')) return;
-  document.getElementById('modal-ov').classList.remove('open');
-  S.modalCard = null;
+  var ov = document.getElementById('modal-ov');
+  // Toca a animação de saída antes de remover o estado .open
+  ov.classList.add('closing');
   _chatStopPolling();
-  _CS.chatId   = null;
-  _CS.seenIds  = {};
-  _CS.messages = [];
-  _pendingImg  = null;
-  // Fecha menu flutuante se aberto
-  var ctx = document.getElementById('mc-ctx-menu');
-  if (ctx) ctx.remove();
+  setTimeout(function() {
+    ov.classList.remove('open');
+    ov.classList.remove('closing');
+    S.modalCard  = null;
+    _CS.chatId   = null;
+    _CS.seenIds  = {};
+    _CS.messages = [];
+    _pendingImg  = null;
+    var ctx = document.getElementById('mc-ctx-menu');
+    if (ctx) ctx.remove();
+  }, 340); // alinhado à duração de mOut
 }
 
 function acaoModal(acao) {
@@ -6487,6 +6625,7 @@ window.addEventListener('DOMContentLoaded', function() {
   setupPwaSupport();
   initPushState();
   applyTheme(S.theme);
+  applySidebarInitial();
   bootAuth();
   maybeShowInstallPrompt();
 

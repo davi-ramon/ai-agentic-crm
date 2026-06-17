@@ -635,6 +635,46 @@ function salvarConfigsMensagemTriagem(dados, authToken) {
   return { ok: true };
 }
 
+/**
+ * Assume o atendimento (modo humano) a partir do modal do card. Pausa a IA no chat.
+ * @param {string} chatId
+ * @param {string} authToken
+ */
+function assumirAtendimentoModal(chatId, authToken) {
+  var sessao = requireAuth(authToken, 'operador');
+  if (!chatId) return { ok: false, erro: 'chatId ausente.' };
+  try {
+    gptMakerStartHuman(chatId);
+    registrarLog('atendimento', 'ok', { chatId: chatId, acao: 'start-human' }, '', {
+      usuario: sessao.email, acao: 'assumir_atendimento_modal',
+    });
+    return { ok: true, humanActive: true };
+  } catch (e) {
+    Logger.log('[assumirAtendimentoModal] ERRO: ' + e.message);
+    return { ok: false, erro: e.message };
+  }
+}
+
+/**
+ * Devolve o atendimento à IA (stop-human) a partir do modal do card.
+ * @param {string} chatId
+ * @param {string} authToken
+ */
+function devolverAtendimentoModal(chatId, authToken) {
+  var sessao = requireAuth(authToken, 'operador');
+  if (!chatId) return { ok: false, erro: 'chatId ausente.' };
+  try {
+    gptMakerStopHuman(chatId);
+    registrarLog('atendimento', 'ok', { chatId: chatId, acao: 'stop-human' }, '', {
+      usuario: sessao.email, acao: 'devolver_atendimento_ia_modal',
+    });
+    return { ok: true, humanActive: false };
+  } catch (e) {
+    Logger.log('[devolverAtendimentoModal] ERRO: ' + e.message);
+    return { ok: false, erro: e.message };
+  }
+}
+
 function getRecentPushEvents(sinceIso, authToken) {
   requireAuth(authToken, 'operador');
   var sheet = getSpreadsheet().getSheetByName('Logs');
